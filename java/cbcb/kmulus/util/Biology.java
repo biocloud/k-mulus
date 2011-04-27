@@ -51,6 +51,53 @@ public class Biology {
 		}
 	}
 
+	private static final int[] aaHashLookup;
+	private static final int NO_RESIDUE = -1;
+	
+	static {
+		aaHashLookup = new int[Character.SIZE];
+		int index = 0;
+		for (int i = 0; i < aaHashLookup.length; i++) {
+			aaHashLookup[i] = NO_RESIDUE;
+		}
+		for (char aa : AMINO_ACIDS) {
+			aaHashLookup[Character.toUpperCase(aa)] = index;
+			aaHashLookup[Character.toLowerCase(aa)] = index;
+			index++;
+		}
+	}
+	
+	/**
+	 * Computes the hash index value for the given amino acid.
+	 * 
+	 * @param aa the amino acid character
+	 * @return the hash index
+	 */
+	public static int getAAHash(char aa) {
+		int hash = aaHashLookup[aa]; 
+		if (hash == NO_RESIDUE) {
+			throw new RuntimeException("Residue '" + aa + "' not found.");
+		}
+		return hash;
+	}
+	
+	/**
+	 * Computes the hash index value for the given amino acid kmer.
+	 * 
+	 * @param kmer a kmer of amino acids
+	 * @return the hash index
+	 */
+	public static int getAAHash(String kmer) {
+		int k = kmer.length();
+		int posValue = 1;
+		int hash = 0;
+		for (int i = 0; i < k; i++) {
+			hash += kmer.charAt(i) * posValue;
+			posValue *= k;
+		}
+		return hash;
+	}
+	
 	/** Takes the reverse complement of the given DNA sequence. */
 	public static String revComp(String dna) {
 		StringBuilder revComp = new StringBuilder();
