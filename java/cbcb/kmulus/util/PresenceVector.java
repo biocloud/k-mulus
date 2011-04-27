@@ -1,8 +1,12 @@
 package cbcb.kmulus.util;
 
-import com.google.common.base.Preconditions;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
-import cbcb.kmulus.util.Biology;
+import org.apache.hadoop.io.Writable;
+
+import com.google.common.base.Preconditions;
 
 /**
  * A bit vector in which each index corresponds to the presence of a specific k-mer in a given 
@@ -11,15 +15,14 @@ import cbcb.kmulus.util.Biology;
  * 
  * @author CH Albach
  */
-public class PresenceVector {
+public class PresenceVector implements Writable {
 	
-	private static final int NO_RESIDUE = -1;
+	private int[] bits;
 	
-	private final int kmerLength;
-	private final int[] bits;
-	
-	/** A case insensitive mapping of residue characters to lookup indices. */
-	private final int[] residueLookup;
+	/** Constructor for deserialization purposes. */
+	public PresenceVector() {
+		bits = new int[0];
+	}
 	
 	/**
 	 * Creates a general {@link PresenceVector} for a protein.  Uses the standard alphabet for amino
@@ -39,17 +42,7 @@ public class PresenceVector {
 	 */
 	public PresenceVector(int kmerLength, char[] residues) {
 		int vectorLength = (int) Math.ceil(Math.pow(residues.length, kmerLength) / Integer.SIZE);
-		this.kmerLength = kmerLength;
 		this.bits = new int[vectorLength];
-		
-		this.residueLookup = new int[Character.MAX_VALUE + 1];
-		for (int i = 0; i < residueLookup.length; i++) {
-			residueLookup[i] = NO_RESIDUE;
-		}
-		for (int i = 0; i < residues.length; i++) {
-			residueLookup[Character.toLowerCase(residues[i])] = i;
-			residueLookup[Character.toUpperCase(residues[i])] = i;
-		}
 	}	
 
 	/**
@@ -58,47 +51,21 @@ public class PresenceVector {
 	 * @param other vector to be copied
 	 */
 	public PresenceVector(PresenceVector other) {
-		this.kmerLength = other.kmerLength;
 		this.bits = new int[other.bits.length];
 		for (int i = 0; i < bits.length; i++) {
 			this.bits[i] = other.bits[i];
-		}
-	
-		this.residueLookup = new int[other.residueLookup.length];
-		for (int i = 0; i < residueLookup.length; i++) {
-			this.residueLookup[i] = other.residueLookup[i];
 		}
 	}
 	
 	/**
 	 * Checks if the given kmer is present in the vector.
 	 * 
-	 * @param kmer the kmer to be checked
+	 * @param kmerIndex the binary index of the kmer to be checked, dependent on the alphabet
 	 * @return true if the kmer is present, false otherwise
 	 */
-	public boolean containsKmer(String kmer) {
-		Preconditions.checkNotNull(kmer);
-		Preconditions.checkState(kmer.length() == kmerLength);
-		
-		int index = 0;
-		int positionValue = 1;
-		for (int i = 0; i < kmerLength; i++) {
-			int code = residueLookup[kmer.charAt(i)];
-			index += code * positionValue;
-			positionValue *= kmerLength;
-		}
-		return indexPresent(index);
-	}
-	
-	/**
-	 * Determines if the given index is a 1 or a 0.
-	 * 
-	 * @param index the index to be checked
-	 * @return true if the index is 1, false if 0
-	 */
-	private boolean indexPresent(int index) {
-		int chunk = bits[index / Integer.MAX_VALUE];
-		int mask = 1 << (index % Integer.MAX_VALUE);
+	public boolean containsKmer(int kmerIndex) {
+		int chunk = bits[kmerIndex / Integer.MAX_VALUE];
+		int mask = 1 << (kmerIndex % Integer.MAX_VALUE);
 		return (chunk & mask) > 0;
 	}
 	
@@ -168,7 +135,7 @@ public class PresenceVector {
 	}
 	
 	public boolean sameParameters(PresenceVector o) {
-		return o != null && kmerLength == o.kmerLength && bits.length == o.bits.length;
+		return o != null && bits.length == o.bits.length;
 	}
 	
 	@Override
@@ -200,6 +167,27 @@ public class PresenceVector {
 				}
 			}
 			return true;
+		}
+	}
+
+	@Override
+	public void readFields(DataInput in) throws IOException {
+		int length = in.readInt();
+		
+		if (bits.length != length) {
+			bits = new int[length];
+		}
+		
+		for (int i = 0; i < length; i++) {
+			bits[i] = in.readInt();
+		}
+	}
+
+	@Override
+	public void write(DataOutput out) throws IOException {
+		out.writeInt(bits.length);
+		for (int i = 0; i < bits.length; i++) {
+			out.writeInt(i);
 		}
 	}
 }
