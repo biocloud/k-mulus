@@ -1,8 +1,10 @@
 package cbcb.kmulus.util;
 
 import java.io.IOException;
+import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 /** Contains basic Biology information. */
 public class Biology {
@@ -51,19 +53,13 @@ public class Biology {
 		}
 	}
 
-	private static final int[] aaHashLookup;
-	private static final int NO_RESIDUE = -1;
+	private static final Map<Character, Integer> aaHashLookup;
 	
 	static {
-		aaHashLookup = new int[Character.SIZE];
-		int index = 0;
-		for (int i = 0; i < aaHashLookup.length; i++) {
-			aaHashLookup[i] = NO_RESIDUE;
-		}
-		for (char aa : AMINO_ACIDS) {
-			aaHashLookup[Character.toUpperCase(aa)] = index;
-			aaHashLookup[Character.toLowerCase(aa)] = index;
-			index++;
+		aaHashLookup = Maps.newHashMap();
+		for (int i = 0; i < AMINO_ACIDS.length; i++) {
+			aaHashLookup.put(Character.toLowerCase(AMINO_ACIDS[i]), i);
+			aaHashLookup.put(Character.toUpperCase(AMINO_ACIDS[i]), i);
 		}
 	}
 	
@@ -74,8 +70,8 @@ public class Biology {
 	 * @return the hash index
 	 */
 	public static int getAAHash(char aa) {
-		int hash = aaHashLookup[aa]; 
-		if (hash == NO_RESIDUE) {
+		Integer hash = aaHashLookup.get(aa); 
+		if (hash == null) {
 			throw new RuntimeException("Residue '" + aa + "' not found.");
 		}
 		return hash;
