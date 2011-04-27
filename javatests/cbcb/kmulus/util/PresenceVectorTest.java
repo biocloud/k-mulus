@@ -52,7 +52,7 @@ public class PresenceVectorTest extends TestCase {
 		PresenceVector otherPv = new PresenceVector(pv);
 		pv.setKmer(0, false);
 		
-		assertTrue(otherPv.containsKmer(0) & otherPv.containsKmer(1) &
+		assertTrue(otherPv.containsKmer(0) && otherPv.containsKmer(1) &&
 				otherPv.containsKmer(4));
 	}
 	
@@ -65,7 +65,7 @@ public class PresenceVectorTest extends TestCase {
 		otherPv.setKmer(3); otherPv.setKmer(5); otherPv.setKmer(4);
 		
 		PresenceVector intersectPv = otherPv.intersect(pv);
-		assertTrue(intersectPv.containsKmer(4) & !intersectPv.containsKmer(2) &
+		assertTrue(intersectPv.containsKmer(4) && !intersectPv.containsKmer(2) &&
 				!intersectPv.containsKmer(5));
 	}
 	
@@ -78,7 +78,7 @@ public class PresenceVectorTest extends TestCase {
 		otherPv.setKmer(3); otherPv.setKmer(5); otherPv.setKmer(4);
 		
 		PresenceVector intersectPv = otherPv.intersectEquals(pv);
-		assertTrue(intersectPv.containsKmer(4) & !intersectPv.containsKmer(3));
+		assertTrue(intersectPv.containsKmer(4) && !intersectPv.containsKmer(3));
 	}
 	
 	/** Test for {@link PresenceVector#union(PresenceVector)} */
@@ -90,7 +90,7 @@ public class PresenceVectorTest extends TestCase {
 		otherPv.setKmer(3); otherPv.setKmer(2);
 		
 		PresenceVector intersectPv = otherPv.union(pv);
-		assertTrue(intersectPv.containsKmer(1) & intersectPv.containsKmer(2) &
-				intersectPv.containsKmer(3) & !intersectPv.containsKmer(4));
+		assertTrue(intersectPv.containsKmer(1) && intersectPv.containsKmer(2) &&
+				intersectPv.containsKmer(3) && !intersectPv.containsKmer(4));
 	}
 }
