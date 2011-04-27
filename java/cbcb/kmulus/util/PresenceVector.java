@@ -58,6 +58,32 @@ public class PresenceVector implements Writable {
 	}
 	
 	/**
+	 * Sets the given kmerIndex to present. Equivalent to calling {@link #setKmer(int, boolean)}
+	 * with present set to 'true'.
+	 * 
+	 * @param kmerIndex the binary index of the kmer to be set
+	 */
+	public void setKmer(int kmerIndex) {
+		setKmer(kmerIndex, true);
+	}
+	
+	/**
+	 * Sets the given kmerIndex to present or not present.
+	 * 
+	 * @param kmerIndex the binary index of the kmer to be set
+	 * @param present the value which the index should be set to
+	 */
+	public void setKmer(int kmerIndex, boolean present) {
+		int bit = 1 << (kmerIndex % Integer.MAX_VALUE);
+		if (present) {
+			bits[kmerIndex / Integer.MAX_VALUE] |= bit;
+		
+		} else {
+			bits[kmerIndex / Integer.MAX_VALUE] &= ~bit;
+		}
+	}
+	
+	/**
 	 * Checks if the given kmer is present in the vector.
 	 * 
 	 * @param kmerIndex the binary index of the kmer to be checked, dependent on the alphabet
