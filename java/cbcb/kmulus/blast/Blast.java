@@ -32,6 +32,7 @@ public class Blast extends Configured implements Tool {
 	protected static final String ALPHABET_SIZE = "ALPHABET_SIZE";
 	protected static final String BLAST_DATABASES = "BLAST_DATABASES";
 	protected static final String CLUSTER_DIR = "CLUSTER_DIR";
+	protected static final String HEADER_SEQUENCE_SEPARATOR = " ";
 	protected static final String KMER_LENGTH = "KMER_LENGTH";
 	
 	private static final int MAX_REDUCES = 200;
