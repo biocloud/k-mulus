@@ -14,16 +14,20 @@ import com.google.common.collect.Maps;
  * Supports compressed amino acid alphabets in which several amino acids are represented as a 
  * single letter.  Along with the obvious mapping of amino acid to alphabet letter, also allows for
  * direct lookup from the DNA triplet to the alphabet letter.
+ * 
+ * @author CH Albach
  */
 public class AlphabetMap {
 
 	private final Map<Character, Character> aaToAlphabet;
 	private final Map<String, Character> dnaToAlphabet;
 	private final Map<String, Character> revCompDnaToAlphabet;
+	
+	private final int alphabetSize;
 
 	/**
 	 * Takes an alphabet as a string in the form '(A B C) (D E) (F) (G H)', where A B and C are
-	 * a class to be compressed as a single letter.
+	 * classes to be compressed as a single letter.
 	 * 
 	 * @param classStr the formatted string with parenthesis denoting a class
 	 */
@@ -42,7 +46,12 @@ public class AlphabetMap {
 		aaToAlphabet = Maps.newHashMap();
 		dnaToAlphabet = Maps.newHashMap();
 		revCompDnaToAlphabet = Maps.newHashMap();
+		alphabetSize = classes.length;
 		initAlphabet(classes, table);
+	}
+	
+	public int size() {
+		return alphabetSize;
 	}
 
 	public char get(char aa) throws IOException {

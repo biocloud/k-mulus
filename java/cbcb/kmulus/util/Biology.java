@@ -19,10 +19,8 @@ public class Biology {
 		'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '*'};
 	public static final char TERMINATOR = '*';
 
-	public static final AATable defaultTable;
-
-	static {
-		defaultTable = new AATable(ImmutableMap.<String, Character>builder()
+	public static final AATable defaultTable = 
+		new AATable(ImmutableMap.<String, Character>builder()
 				.put("TTT", 'F').put("TTC", 'F').put("TTA", 'L').put("TTG", 'L')
 				.put("TCT", 'S').put("TCC", 'S').put("TCA", 'S').put("TCG", 'S')
 				.put("TAT", 'Y').put("TAC", 'Y').put("TAA", TERMINATOR).put("TAG", TERMINATOR)
@@ -39,7 +37,6 @@ public class Biology {
 				.put("GCT", 'A').put("GCC", 'A').put("GCA", 'A').put("GCG", 'A')
 				.put("GAT", 'D').put("GAC", 'D').put("GAA", 'E').put("GAG", 'E')
 				.put("GGT", 'G').put("GGC", 'G').put("GGA", 'G').put("GGG", 'G').build());
-	}
 
 	public static final String alphabetStrA20 = 
 		"(A) (R) (N) (D) (C) (E) (Q) (G) (H) (I) (L) (K) (M) (F) (P) (S) (T) (W) (Y) (V)";
