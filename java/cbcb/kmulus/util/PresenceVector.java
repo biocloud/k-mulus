@@ -96,6 +96,24 @@ public class PresenceVector implements Writable {
 	}
 	
 	/**
+	 * Checks if this intersects with the given {@link PresenceVector}.
+	 * 
+	 * @param other the vector to check against
+	 * @return true if the vectors intersect, false otherwise
+	 */
+	public boolean intersects(PresenceVector other) {
+		Preconditions.checkNotNull(other);
+		Preconditions.checkState(sameParameters(other));
+		
+		for (int i = 0; i < bits.length; i++) {
+			if ((bits[i] & other.bits[i]) > 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
 	 * Intersects the bits of itself with the given {@link PresenceVector}.  This vector is
 	 * unchanged as a result of this operation.  Equivalent to '&'.
 	 * 
