@@ -14,7 +14,7 @@ public class LocalAlignmentTest extends TestCase {
 		
 		Text aText = new Text(a);
 		Text bText = new Text(b);
-		
+
 		LocalAlignment localHadoop = LocalAlignment.getLocalAlignment(aText, bText, 10, -5, -5, -2);
 		SerialLocalAlignment localSerial = SerialLocalAlignment.align(a, b, 10, -5, -5, -2);
 		assertEquals(localSerial.getScore(), localHadoop.getScore());
