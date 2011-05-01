@@ -17,33 +17,59 @@ import com.google.common.base.Preconditions;
  */
 public class PresenceVector implements Writable {
 	
-	private int[] bits;
+	/** A lookup for the bit counts of all possible bytes. */
+	private static final byte[] bitCountLookup;
+	static {
+		bitCountLookup = new byte[1 << Byte.SIZE];
+		for (int i = 0; i < bitCountLookup.length; i++) {
+			byte count = 0;
+			for (int j = i; j != 0; j >>>= 1) {
+				count += j & 1;
+			}
+			bitCountLookup[i] = count;
+		}
+	}
 	
-	/** Constructor for deserialization purposes. */
+	private int[] bits;
+	private int id;
+	
+	/** Constructor for de-serialization purposes. */
 	public PresenceVector() {
 		bits = new int[0];
+		id = -1;
 	}
 	
 	/**
-	 * Creates a general {@link PresenceVector} for a protein.  Uses the standard alphabet for amino
-	 * acids.
+	 * Creates a general {@link PresenceVector} for a protein with an alphabet of the amino acids.
 	 * 
 	 * @param kmerLength length of the kmers indexed by this vector
 	 */
 	public PresenceVector(int kmerLength) {
-		this(kmerLength, Biology.AMINO_ACIDS);
+		this(kmerLength, Biology.AMINO_ACIDS.length);
 	}
 	
 	/**
-	 * Creates a {@link PresenceVector} for the given array of residues or alphabet.
+	 * Creates a {@link PresenceVector} for k-mers of the given alphabet size.
 	 * 
 	 * @param kmerLength length of the kmers indexed by this vector
-	 * @param residues all possible residues for a given position, or a compressed alphabet
+	 * @param alphabetSize size of the alphabet used for the kmers
 	 */
-	public PresenceVector(int kmerLength, char[] residues) {
-		int vectorLength = (int) Math.ceil(Math.pow(residues.length, kmerLength) / Integer.SIZE);
-		this.bits = new int[vectorLength];
+	public PresenceVector(int kmerLength, int alphabetSize) {
+		this(kmerLength, alphabetSize, -1);
 	}	
+	
+	/**
+	 * Creates a {@link PresenceVector} for k-mers of the given alphabet size.
+	 * 
+	 * @param kmerLength length of the k-mers indexed by this vector
+	 * @param alphabetSize size of the alphabet used for the k-mers
+	 * @param id the id for the sequence represented by this vector
+	 */
+	public PresenceVector(int kmerLength, int alphabetSize, int id) {
+		int vectorLength = (int) Math.ceil(Math.pow(alphabetSize, kmerLength) / Integer.SIZE);
+		this.bits = new int[vectorLength];
+		this.id = id;
+	}
 
 	/**
 	 * Copy constructor.
@@ -74,12 +100,12 @@ public class PresenceVector implements Writable {
 	 * @param present the value which the index should be set to
 	 */
 	public void setKmer(int kmerIndex, boolean present) {
-		int bit = 1 << (kmerIndex % Integer.MAX_VALUE);
+		int bit = 1 << (kmerIndex % Integer.SIZE);
 		if (present) {
-			bits[kmerIndex / Integer.MAX_VALUE] |= bit;
+			bits[kmerIndex / Integer.SIZE] |= bit;
 		
 		} else {
-			bits[kmerIndex / Integer.MAX_VALUE] &= ~bit;
+			bits[kmerIndex / Integer.SIZE] &= ~bit;
 		}
 	}
 	
@@ -90,9 +116,19 @@ public class PresenceVector implements Writable {
 	 * @return true if the kmer is present, false otherwise
 	 */
 	public boolean containsKmer(int kmerIndex) {
-		int chunk = bits[kmerIndex / Integer.MAX_VALUE];
-		int mask = 1 << (kmerIndex % Integer.MAX_VALUE);
+		int chunk = bits[kmerIndex / Integer.SIZE];
+		int mask = 1 << (kmerIndex % Integer.SIZE);
 		return (chunk & mask) > 0;
+	}
+	
+	/** Sets the (optional) id for the sequence associated with this {@link PresenceVector}. */
+	public void setId(int id) {
+		this.id = id;
+	}
+	
+	/** Returns the (optional) id for the sequences associated with this {@link PresenceVector}. */
+	public int getId() {
+		return id;
 	}
 	
 	/**
@@ -143,6 +179,37 @@ public class PresenceVector implements Writable {
 			bits[i] &= other.bits[i];
 		}
 		return this;
+	}
+	
+	/**
+	 * Counts the number of intersecting k-mers between this and the given {@link PresenceVector}.
+	 * 
+	 * @param other the vector to compare to
+	 * @return the number of overlapping k-mers between the two vectors
+	 */
+	public int intersectionCount(PresenceVector other) {
+		Preconditions.checkNotNull(other);
+		
+		int count = 0;
+		for (int i = 0; i < bits.length; i++) {
+			count += countBits(bits[i] & other.bits[i]);
+		}
+		return count;
+	}
+	
+	/**
+	 * Counts the bits in the given int.
+	 * 
+	 * @param value integer to be counted
+	 * @return the number of bits in the given int
+	 */
+	int countBits(int value) {
+		int count = 0;
+		for (int i = 0; i < Integer.SIZE; i += Byte.SIZE) {
+			int lastByte = (value >>> i) & 0xFF;
+			count += bitCountLookup[lastByte];
+		}
+		return count;
 	}
 	
 	/**
@@ -201,7 +268,7 @@ public class PresenceVector implements Writable {
 		
 		} else {
 			PresenceVector pv = (PresenceVector) o;
-			if (bits.length != pv.bits.length) {
+			if (id != pv.id || bits.length != pv.bits.length) {
 				return false;
 			}
 			
@@ -216,8 +283,9 @@ public class PresenceVector implements Writable {
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
+		id = in.readInt();
+
 		int length = in.readInt();
-		
 		if (bits.length != length) {
 			bits = new int[length];
 		}
@@ -229,6 +297,7 @@ public class PresenceVector implements Writable {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		out.writeInt(id);
 		out.writeInt(bits.length);
 		for (int i = 0; i < bits.length; i++) {
 			out.writeInt(i);

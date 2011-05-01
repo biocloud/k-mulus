@@ -78,17 +78,36 @@ public class Biology {
 	}
 	
 	/**
-	 * Computes the hash index value for the given amino acid kmer.
+	 * Computes the hash index value for the given amino acid k-mer, which uses the original amino
+	 * acid alphabet. 
 	 * 
 	 * @param kmer a kmer of amino acids
 	 * @return the hash index
 	 */
-	public static int getAAHash(String kmer) {
+	public static int getAAKmerHash(String kmer) {
 		int k = kmer.length();
 		int posValue = 1;
 		int hash = 0;
 		for (int i = 0; i < k; i++) {
-			hash += kmer.charAt(i) * posValue;
+			hash += getAAHash(kmer.charAt(i)) * posValue;
+			posValue *= k;
+		}
+		return hash;
+	}
+	
+	/**
+	 * Computes the hash index value for the given compressed alphabet k-mer.
+	 * 
+	 * @param kmer a kmer of amino acids
+	 * @return the hash index
+	 */
+	public static int getCompressedHash(String kmer) {
+		int k = kmer.length();
+		int posValue = 1;
+		int hash = 0;
+		for (int i = 0; i < k; i++) {
+			int index = kmer.charAt(i) - (Character.isUpperCase(kmer.charAt(i)) ? 'A' : 'a');
+			hash += index * posValue;
 			posValue *= k;
 		}
 		return hash;

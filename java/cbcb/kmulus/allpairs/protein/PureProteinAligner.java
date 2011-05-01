@@ -124,7 +124,7 @@ public class PureProteinAligner extends Configured implements Tool {
 		@Override
 		public void map(LongWritable key, Text value, Context context) 
 				throws IOException, InterruptedException {
-			long id = parseId(value);
+			long id = parseId(key, value);
 			String seq = value.toString();
 			seq = seq.substring(seq.indexOf(' ') + 1);
 			
@@ -139,15 +139,7 @@ public class PureProteinAligner extends Configured implements Tool {
 		}
 
 		@Override
-		protected long[] getGroups(long id) throws IOException {
-			if (eug == null) {
-				throw new IOException("Grouper was not properly initialized.");
-			}
-			return eug.getGroups(id);
-		}
-
-		@Override
-		protected long parseId(Text value) throws IOException {
+		protected long parseId(LongWritable key, Text value) throws IOException {
 			long seqId = parseSeqId(value);
 
 			if (seqId > eug.getNumItems()) {
@@ -157,6 +149,14 @@ public class PureProteinAligner extends Configured implements Tool {
 			}
 
 			return seqId;
+		}
+
+		@Override
+		protected ExhaustiveUniqueGrouper getGrouper() throws IOException {
+			if (eug == null) {
+				throw new IOException("Grouper was not properly initialized.");
+			}
+			return eug;
 		}
 	}
 

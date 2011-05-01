@@ -139,7 +139,7 @@ public class GenerateClusterPresenceVectors extends Configured implements Tool {
 			PresenceVector pv = new PresenceVector(KMER_LENGTH);
 			
 			for (int i = 0; i <= sequence.length() - KMER_LENGTH; i++) {
-				pv.setKmer(Biology.getAAHash(sequence.substring(i, i + KMER_LENGTH)));
+				pv.setKmer(Biology.getAAKmerHash(sequence.substring(i, i + KMER_LENGTH)));
 			}
 			
 			context.write(clusterId, pv);
