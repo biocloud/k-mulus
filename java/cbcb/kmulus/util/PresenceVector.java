@@ -139,7 +139,7 @@ public class PresenceVector implements Writable {
 	 */
 	public boolean intersects(PresenceVector other) {
 		Preconditions.checkNotNull(other);
-		Preconditions.checkState(sameParameters(other));
+		Preconditions.checkState(hasSameParameters(other));
 		
 		for (int i = 0; i < bits.length; i++) {
 			if ((bits[i] & other.bits[i]) > 0) {
@@ -158,7 +158,7 @@ public class PresenceVector implements Writable {
 	 */
 	public PresenceVector intersect(PresenceVector other) {
 		Preconditions.checkNotNull(other);
-		Preconditions.checkState(sameParameters(other));
+		Preconditions.checkState(hasSameParameters(other));
 		
 		PresenceVector result = new PresenceVector(this);
 		return result.intersectEquals(other);
@@ -173,7 +173,7 @@ public class PresenceVector implements Writable {
 	 */
 	public PresenceVector intersectEquals(PresenceVector other) {
 		Preconditions.checkNotNull(other);
-		Preconditions.checkState(sameParameters(other));
+		Preconditions.checkState(hasSameParameters(other));
 		
 		for (int i = 0; i < bits.length; i++) {
 			bits[i] &= other.bits[i];
@@ -193,6 +193,22 @@ public class PresenceVector implements Writable {
 		int count = 0;
 		for (int i = 0; i < bits.length; i++) {
 			count += countBits(bits[i] & other.bits[i]);
+		}
+		return count;
+	}
+	
+	/**
+	 * Computes the Hamming distance, the number of bitwise differences between the two vectors.
+	 * 
+	 * @param vector the vector to be compared against
+	 * @return the Hamming distance
+	 */
+	public int getHammingDistance(PresenceVector other) {
+		Preconditions.checkNotNull(other);
+		
+		int count = 0;
+		for (int i = 0; i < bits.length; i++) {
+			count += countBits(bits[i] ^ other.bits[i]);
 		}
 		return count;
 	}
@@ -222,7 +238,7 @@ public class PresenceVector implements Writable {
 	 */
 	public PresenceVector union(PresenceVector other) {
 		Preconditions.checkNotNull(other);
-		Preconditions.checkState(sameParameters(other));
+		Preconditions.checkState(hasSameParameters(other));
 		
 		PresenceVector result = new PresenceVector(this);
 		return result.unionEquals(other);
@@ -237,7 +253,7 @@ public class PresenceVector implements Writable {
 	 */
 	public PresenceVector unionEquals(PresenceVector other) {
 		Preconditions.checkNotNull(other);
-		Preconditions.checkState(sameParameters(other));
+		Preconditions.checkState(hasSameParameters(other));
 		
 		for (int i = 0; i < bits.length; i++) {
 			bits[i] |= other.bits[i];
@@ -245,7 +261,7 @@ public class PresenceVector implements Writable {
 		return this;
 	}
 	
-	public boolean sameParameters(PresenceVector o) {
+	boolean hasSameParameters(PresenceVector o) {
 		return o != null && bits.length == o.bits.length;
 	}
 	
