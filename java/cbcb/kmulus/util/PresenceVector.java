@@ -3,6 +3,8 @@ package cbcb.kmulus.util;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.hadoop.io.Writable;
 
@@ -81,6 +83,22 @@ public class PresenceVector implements Writable {
 		for (int i = 0; i < bits.length; i++) {
 			this.bits[i] = other.bits[i];
 		}
+	}
+	
+	/**
+	 * Returns a set of the hashes of all k-mers present in the vector. This set will not reflect
+	 * any changes made to the vector after the call to this function.
+	 * 
+	 * @return a set of all present k-mer hashes
+	 */
+	public Set<Integer> getAllPresentHashes() {
+		Set<Integer> hashes = new HashSet<Integer>();
+		for (int i = 0; i < bits.length * Integer.SIZE; i++) {
+			if (containsKmer(i)) {
+				hashes.add(i);
+			}
+		}
+		return hashes;
 	}
 	
 	/**
