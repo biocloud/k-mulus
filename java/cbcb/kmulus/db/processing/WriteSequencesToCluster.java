@@ -25,6 +25,8 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Preconditions;
+
 public class WriteSequencesToCluster  extends Configured implements Tool {
 	
 	private static final Logger LOG = Logger.getLogger(WriteSequencesToCluster.class);
@@ -48,6 +50,7 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 		
 		public void map(LongWritable key, Text value, Context context) 
 				throws IOException, InterruptedException {
+			
 			String line = value.toString().trim();
 			if (line.isEmpty())
 				return;
