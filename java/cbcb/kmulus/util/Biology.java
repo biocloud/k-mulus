@@ -18,7 +18,7 @@ public class Biology {
 		"GGA", "GGT", "GGC", "GGG"};
 
 	public static final char[] AMINO_ACIDS = {'A', 'R', 'N', 'D', 'C', 'E', 'Q', 'G', 'H', 'I', 'L',
-		'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '*'};
+		'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '*', 'U', 'O', 'B', 'Z', 'J', 'X'};
 	public static final char TERMINATOR = '*';
 
 	public static final AATable defaultTable = 
