@@ -16,7 +16,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.Reducer.Context;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -25,7 +24,7 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
+import cbcb.kmulus.util.PresenceVector;
 
 public class WriteSequencesToCluster  extends Configured implements Tool {
 	
@@ -48,6 +47,7 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 	 */
 	public static class Map extends Mapper<LongWritable, Text, LongWritable, Text> {
 		
+		@Override
 		public void map(LongWritable key, Text value, Context context) 
 				throws IOException, InterruptedException {
 			

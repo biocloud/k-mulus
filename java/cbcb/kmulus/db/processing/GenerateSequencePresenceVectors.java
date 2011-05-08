@@ -40,7 +40,7 @@ public class GenerateSequencePresenceVectors extends Configured implements Tool 
 
 		/**
 		 * This mapper takes as input the cluster information and sequences, and outputs
-		 * two possible pairs, (seqId, cluster it belongs to), and (seqId, sequence).
+		 * (seqId, {@link PresenceVector}).
 		 */
 		public static class Map extends Mapper<LongWritable, Text, LongWritable, PresenceVector> {
 			
