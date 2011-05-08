@@ -17,6 +17,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.mapred.lib.IdentityReducer;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Mapper.Context;
@@ -34,8 +35,9 @@ import org.apache.log4j.Logger;
 public class ClusterPresenceVectors extends Configured implements Tool {
 	
 	private static final Logger LOG = Logger.getLogger(ClusterPresenceVectors.class);
-
 	private static final String USAGE = "ClusterPresenceVectors KMER_VECTOR_INPUT OUTPUT NUM_SEQUENCES NUM_CLUSTERS [NUM_TASKS]";
+	
+	public static final String FINAL_DIR = "final";
 	
 	protected static final String DEBUG = "DEBUG";
 	protected static final String INPUT_PATH = "INPUT_PATH";
@@ -50,8 +52,18 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 	private static final int MAX_MAPS = 200;
 	private static final int MAX_ITERATIONS = 1;
 	
-	protected static int runIter = 0;
-	protected static int finished = 0;
+	protected final int runIter;
+	protected final boolean finished;
+	
+	public ClusterPresenceVectors() {
+		runIter = 0;
+		finished = true;
+	}
+	
+	public ClusterPresenceVectors(int runIter) {
+		this.runIter = runIter;
+		finished = false;
+	}
 	
 	/**
 	 * This mapper takes as input a {@link PresenceVector} and emits (id
@@ -175,12 +187,12 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		FileSystem.get(conf).delete(new Path(args[1]), true);
 		
 		int res = 0;
+		int runIter = 0;
 		do {
-			res = ToolRunner.run(new Configuration(), new ClusterPresenceVectors(), args);
+			res = ToolRunner.run(new Configuration(), new ClusterPresenceVectors(runIter), args);
 			runIter++;
 		} while (res == 0);
 		
-		finished = 1;
 		res = ToolRunner.run(new Configuration(), new ClusterPresenceVectors(), args);
 		System.exit(res);
 	}
@@ -222,8 +234,10 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		job.setMapOutputValueClass(PresenceVector.class);
 
 		job.setMapperClass(ClusterPresenceVectors.Map.class);
-		job.setReducerClass(KMeansReducer.class);
-
+		if (!finished) {
+			job.setReducerClass(KMeansReducer.class);
+		}
+		
 		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 		
@@ -250,21 +264,27 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		}
 		
 		int maxSequenceNumber = Integer.parseInt(numSequences);
-		int clusters;
-		
-		if(args.length < 4)
-			clusters = 114;
-		else
-			clusters = Integer.parseInt(numClusters);
-		
+		int clusters = Integer.parseInt(numClusters);
 		conf.setInt(NUM_CLUSTERS, clusters);
 		
 		/* Setup the key value pairs */
 		job.setNumReduceTasks(reduceTasks);
 
-		/* Basically, output a textfile at the end. Otherwise, output a sequence file */
-		if (finished == 1) {
+		if (finished || runIter - 2 > MAX_ITERATIONS) {
+			
+			job.setOutputKeyClass(LongWritable.class);
+			// job.setOutputValueClass(Text.class);
+			// job.setOutputFormatClass(TextOutputFormat.class);
+			
+			job.setMapOutputKeyClass(LongWritable.class);
+			job.setMapOutputValueClass(PresenceVector.class);
+
+			job.setMapperClass(ClusterPresenceVectors.Map.class);
+			FileOutputFormat.setOutputPath(job, new Path(outputPath + Path.SEPARATOR + FINAL_DIR));
+			
+			job.waitForCompletion(true);		
 			return 1;
+
 		} else {
 			job.setOutputFormatClass(SequenceFileOutputFormat.class);
 			FileOutputFormat.setOutputPath(job, new Path(tempInput + "/output-"
@@ -316,28 +336,8 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 			sf.close();
 		}
 		
-		if (finished == 1 || runIter - 2 > MAX_ITERATIONS) {
-			
-			job.setOutputKeyClass(LongWritable.class);
-			// job.setOutputValueClass(Text.class);
-			// job.setOutputFormatClass(TextOutputFormat.class);
-			
-			job.setMapOutputKeyClass(LongWritable.class);
-			job.setMapOutputValueClass(PresenceVector.class);
-
-			job.setMapperClass(ClusterPresenceVectors.Map.class);
-			job.setReducerClass(KMeansReducer.class);
-						
-			FileOutputFormat.setOutputPath(job, new Path(outputPath + "/final"));
-			
-			job.waitForCompletion(true);		
-			return 1;
-		}
-		
 		job.setNumReduceTasks(reduceTasks);
-
 		long startTime = System.currentTimeMillis();
-
 		boolean result = job.waitForCompletion(true);
 
 		LOG.info((System.currentTimeMillis() - startTime) + LOG_DELIM
