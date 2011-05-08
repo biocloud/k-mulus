@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
 /** Contains basic Biology information. */
@@ -20,8 +21,9 @@ public class Biology {
 		"GGA", "GGT", "GGC", "GGG"};
 
 	public static final char[] AMINO_ACIDS = {'A', 'R', 'N', 'D', 'C', 'E', 'Q', 'G', 'H', 'I', 'L',
-		'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '*', 'U', 'O', 'B', 'Z', 'J', 'X'};
+		'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '*', 'U', 'O'};
 	public static final char TERMINATOR = '*';
+	public static final Set<Character> AMBIGUOUS_CODES = ImmutableSet.of('B', 'Z', 'X', 'J', '-');
 
 	public static final AATable defaultTable = 
 		new AATable(ImmutableMap.<String, Character>builder()
@@ -66,7 +68,8 @@ public class Biology {
 	}
 	
 	/**
-	 * Computes the hash index value for the given amino acid.
+	 * Computes the hash index value for the given amino acid. Returns -1 if the code amino acid
+	 * code is ambiguous.
 	 * 
 	 * @param aa the amino acid character
 	 * @return the hash index
@@ -74,16 +77,21 @@ public class Biology {
 	public static int getAAHash(char aa) {
 		Integer hash = aaHashLookup.get(aa); 
 		if (hash == null) {
-			throw new RuntimeException("Residue '" + aa + "' not found.");
+			if (AMBIGUOUS_CODES.contains(aa)) {
+				return -1;
+				
+			} else {
+				throw new RuntimeException("Residue '" + aa + "' not found.");
+			}
 		}
 		return hash;
 	}
 	
 	/**
 	 * Computes the hash index value for the given amino acid k-mer, which uses the original amino
-	 * acid alphabet. 
+	 * acid alphabet. Returns -1 if there is an ambiguity in the k-mer.
 	 * 
-	 * @param kmer a kmer of amino acids
+	 * @param kmer a k-mer of amino acids
 	 * @return the hash index
 	 */
 	public static int getAAKmerHash(String kmer) {
@@ -91,7 +99,11 @@ public class Biology {
 		int posValue = 1;
 		int hash = 0;
 		for (int i = 0; i < k; i++) {
-			hash += getAAHash(kmer.charAt(i)) * posValue;
+			int aaHash = getAAHash(kmer.charAt(i)) * posValue;
+			if (aaHash == -1) {
+				return -1;
+			}
+			hash += aaHash;
 			posValue *= k;
 		}
 		return hash;
@@ -124,7 +136,10 @@ public class Biology {
 	 */
 	public static Set<Integer> getNeighborKmerHashes(String kmer, int threshold) {
 		Set<Integer> kmers = new HashSet<Integer>();
-		kmers.add(getAAKmerHash(kmer));
+		int hash = getAAKmerHash(kmer);
+		if (hash >= 0) {
+			kmers.add(hash);
+		}
 
 		// TODO(calbach): Implement threshold matching.
 		return kmers;
