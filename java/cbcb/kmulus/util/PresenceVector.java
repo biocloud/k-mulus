@@ -334,7 +334,7 @@ public class PresenceVector implements Writable {
 		out.writeInt(id);
 		out.writeInt(bits.length);
 		for (int i = 0; i < bits.length; i++) {
-			out.writeInt(i);
+			out.writeInt(bits[i]);
 		}
 	}
 }
