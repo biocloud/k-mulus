@@ -9,7 +9,6 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.Reducer.Context;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -18,9 +17,18 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
+import cbcb.kmulus.blast.Blast;
 import cbcb.kmulus.blast.BlastMapper;
 
-/** Hadoop program which counts the number of sequences which are mapped to each cluster. */
+/** 
+ * Hadoop program which counts the number of sequences which are mapped to each cluster. Should only
+ * be run after database clustering has been completed.
+ * 
+ * Emits values of the form (cluster_id, count), where count is the number of sequences which map
+ * to that cluster center.
+ * 
+ * @see Blast
+ */
 public class CountClusterHits extends Configured implements Tool {
 
 	private static final Logger LOG = Logger.getLogger(CountClusterHits.class);
@@ -106,6 +114,7 @@ public class CountClusterHits extends Configured implements Tool {
 		return result ? 0 : 1;
 	}
 	
+	/** Counts the number of sequences mapped to each cluster center. Emits (cluster_id, count). */
 	public class CountReducer extends Reducer<LongWritable, Text, LongWritable, LongWritable> {
 		
 		@Override
