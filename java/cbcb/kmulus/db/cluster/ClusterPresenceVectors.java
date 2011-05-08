@@ -286,7 +286,6 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 			return 1;
 
 		} else {
-			job.setOutputFormatClass(SequenceFileOutputFormat.class);
 			FileOutputFormat.setOutputPath(job, new Path(tempInput + "/output-"
 					+ (runIter + 1)));
 		}
@@ -309,6 +308,7 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 			SequenceFile.Writer sf = new SequenceFile.Writer(fs, conf,
 					new Path(tempInput + "/output-0/part-r-00000"),
 					LongWritable.class, PresenceVector.class);
+			
 
 			// Bootstrap with the first k sequences from input.
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs,

@@ -1,6 +1,7 @@
 package cbcb.kmulus;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -50,6 +51,11 @@ public class PartitionDatabase {
 		Integer.parseInt(kmerLen);
 		
 		try {
+			// Delete the output directories.
+			Configuration conf = new Configuration();
+			FileSystem.get(conf).delete(new Path(tempOut), true);
+            FileSystem.get(conf).delete(new Path(finalOut), true);
+			
 			// TODO(calbach): Repeat masking.
 
 			// Transform the database sequences into PresenceVectors.
@@ -118,7 +124,7 @@ public class PartitionDatabase {
 			
 		} catch (Exception e) {
 			e.printStackTrace();
-			System.out.println("Job failed.");
+			System.out.println("Pipeline failed.");
 		}
 	}
 }
