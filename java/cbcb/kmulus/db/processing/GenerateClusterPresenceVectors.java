@@ -61,8 +61,7 @@ public class GenerateClusterPresenceVectors extends Configured implements Tool {
 			if (line.contains(GenerateClusterPresenceVectors.CLUSTER_SEPARATOR)) {
 
 				String[] clusterAndMembers = line.split(GenerateClusterPresenceVectors.CLUSTER_SEPARATOR);
-				LongWritable cluster = new LongWritable(new Long(
-						clusterAndMembers[0]));
+				LongWritable cluster = new LongWritable(new Long(clusterAndMembers[0]));
 
 				// For sequence that is a member of this cluster, emit (seqId,
 				// clusterId).

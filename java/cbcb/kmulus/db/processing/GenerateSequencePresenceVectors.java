@@ -31,7 +31,7 @@ public class GenerateSequencePresenceVectors extends Configured implements Tool 
 	
 		private static final Logger LOG = Logger.getLogger(GenerateSequencePresenceVectors.class);
 
-		private static final String USAGE = "GenerateSequencePresenceVectors SEQUENCE_INPUT OUTPUT [NUM_TASKS]";
+		private static final String USAGE = "GenerateSequencePresenceVectors SEQUENCE_INPUT OUTPUT [KMER_LEN] [NUM_TASKS]";
 		private static final String KMER_LENGTH = "KMER_LENGTH";
 		private static final String LOG_DELIM = ",";
 
@@ -105,7 +105,7 @@ public class GenerateSequencePresenceVectors extends Configured implements Tool 
 	@Override
 	public int run(String[] args) throws Exception {
 
-		if (args.length < 3) {
+		if (args.length < 2) {
 			System.out.println(USAGE);
 			return -1;
 		}
