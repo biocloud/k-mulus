@@ -129,7 +129,8 @@ public class BlastMapper extends Mapper<LongWritable, Text, LongWritable, Text> 
 		
 		for (int i = 0; i < sequence.length() - kmerLength; i++) {
 			
-			Set<Integer> kmerHashes = getNeighborKmerHashes(sequence.substring(i, i + kmerLength), 0);
+			String kmer = sequence.substring(i, i + kmerLength);
+			Set<Integer> kmerHashes = Biology.getNeighborKmerHashes(kmer, 0);
 			for (int kmerHash : kmerHashes) {
 
 				// Check which cluster centers overlap with this k-mer.
@@ -149,19 +150,4 @@ public class BlastMapper extends Mapper<LongWritable, Text, LongWritable, Text> 
 			context.write(new LongWritable(clusterId), value);
 		}
 	}
-	
-	/**
-	 * Returns the hashes of all k-mers which match the given k-mer with the given threshold.
-	 * 
-	 * @param kmer the k-mer to be matched against
-	 * @param threshold the scoring threshold to exceed
-	 * @return the hashes of all matching k-mers
-	 */
-	Set<Integer> getNeighborKmerHashes(String kmer, int threshold) {
-		Set<Integer> kmers = new HashSet<Integer>();
-		kmers.add(Biology.getAAKmerHash(kmer));
-
-		// TODO(calbach): Implement threshold matching.
-		return kmers;
-	} 
 }

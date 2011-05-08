@@ -1,7 +1,9 @@
 package cbcb.kmulus.util;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -112,6 +114,21 @@ public class Biology {
 		}
 		return hash;
 	}
+	
+	/**
+	 * Returns the hashes of all k-mers which match the given k-mer with the given threshold.
+	 * 
+	 * @param kmer the k-mer to be matched against
+	 * @param threshold the scoring threshold to exceed
+	 * @return the hashes of all matching k-mers
+	 */
+	public static Set<Integer> getNeighborKmerHashes(String kmer, int threshold) {
+		Set<Integer> kmers = new HashSet<Integer>();
+		kmers.add(getAAKmerHash(kmer));
+
+		// TODO(calbach): Implement threshold matching.
+		return kmers;
+	} 
 	
 	/** Takes the reverse complement of the given DNA sequence. */
 	public static String revComp(String dna) {
