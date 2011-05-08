@@ -33,7 +33,7 @@ public class PresenceVector implements Writable {
 	}
 	
 	private int[] bits;
-	private int id;
+	private long id;
 	
 	/** Constructor for de-serialization purposes. */
 	public PresenceVector() {
@@ -67,7 +67,7 @@ public class PresenceVector implements Writable {
 	 * @param alphabetSize size of the alphabet used for the k-mers
 	 * @param id the id for the sequence represented by this vector
 	 */
-	public PresenceVector(int kmerLength, int alphabetSize, int id) {
+	public PresenceVector(int kmerLength, int alphabetSize, long id) {
 		int vectorLength = (int) Math.ceil(Math.pow(alphabetSize, kmerLength) / Integer.SIZE);
 		this.bits = new int[vectorLength];
 		this.id = id;
@@ -140,12 +140,12 @@ public class PresenceVector implements Writable {
 	}
 	
 	/** Sets the (optional) id for the sequence associated with this {@link PresenceVector}. */
-	public void setId(int id) {
+	public void setId(long id) {
 		this.id = id;
 	}
 	
 	/** Returns the (optional) id for the sequences associated with this {@link PresenceVector}. */
-	public int getId() {
+	public long getId() {
 		return id;
 	}
 	
@@ -317,7 +317,7 @@ public class PresenceVector implements Writable {
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		id = in.readInt();
+		id = in.readLong();
 
 		int length = in.readInt();
 		if (bits.length != length) {
@@ -331,7 +331,7 @@ public class PresenceVector implements Writable {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeInt(id);
+		out.writeLong(id);
 		out.writeInt(bits.length);
 		for (int i = 0; i < bits.length; i++) {
 			out.writeInt(bits[i]);

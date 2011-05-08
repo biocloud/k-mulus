@@ -18,7 +18,7 @@ import cbcb.kmulus.util.Biology;
 import cbcb.kmulus.util.PresenceVector;
 
 /**
- * Mapper recieves a chunk of input simple fasta sequences. For each k-mer seen in
+ * Mapper receives a chunk of input simple fasta sequences. For each k-mer seen in
  * the query sequence, it is checked against each clusters k-mers vector.  If
  * the query shares a k-mer in common with a cluster, the (cluster_id, >query_seq)
  * is emitted.

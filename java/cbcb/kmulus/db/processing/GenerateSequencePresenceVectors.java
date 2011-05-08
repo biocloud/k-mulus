@@ -72,6 +72,7 @@ public class GenerateSequencePresenceVectors extends Configured implements Tool 
 				
 				// Create the feature vector.
 				PresenceVector featureVector = new PresenceVector(kmerLength);
+				featureVector.setId(seqId.get());
 				
 				for (int i = 0; i <= sequence.length() - kmerLength; i += kmerLength)
 					featureVector.setKmer(Biology.getAAKmerHash(sequence.substring(i, i + kmerLength)));
