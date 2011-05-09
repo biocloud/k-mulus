@@ -57,17 +57,10 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 			
 			// Is the current line of a cluster?
 			if (!line.contains(">")) {
-				// For cluster "88	178:142:39:...", emit (178, 88), (142, 88), (39, 88) ...
+				// For input 178 88, emit (178, 88)
 				String[] tuple = line.split("\t");
+				context.write(new LongWritable(Long.parseLong(tuple[0])), new Text(tuple[1]));
 				
-				Text clusterCenter = new Text(tuple[0]);
-				try {
-					for (int i = 1; i < tuple.length; i++) {
-						context.write(new LongWritable(new Long(tuple[i])), clusterCenter);
-					}
-				} catch (java.lang.ArrayIndexOutOfBoundsException e) {
-					throw new IOException("Failure on line:" + line);
-				}
 			} else {
 				// TODO(cmhill) Error check.
 				// For the sequence ">118 acgghachfcg", emit (118, '>118 acgg...')
@@ -128,8 +121,9 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 				
 				if (line.contains(" ")) {
 					sequence = line;
-				} else
+				} else {
 					clusterId = new LongWritable(new Long(value.toString()));
+				}
 			}
 			
 			// Output the sequence in fasta format to the correct hdfs directory.

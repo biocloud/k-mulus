@@ -60,7 +60,7 @@ public class PartitionDatabase {
 		
 		String dbInput = args[0];
 		String tempOut = args[1] + Path.SEPARATOR + TEMP_SUFFIX;
-		String finalOut = args[1] + Path.SEPARATOR + PARTITIONS_SUFFIX;
+		String finalOut = args[1];
 		String numSeq = args[2];
 		String numClusters = args[3];
 		PipeStep start = PipeStep.REPEAT_MASK;
@@ -71,14 +71,17 @@ public class PartitionDatabase {
 				System.err.println(USAGE);
 				return;
 			}
-			
-			String startStr = args[4].split(STEP_DELIM)[0];
+			String[] chunks = args[4].split(STEP_DELIM);
+			String startStr = chunks[0];
 			if (startStr.length() > 0) {
 				start = stepMap.get(startStr.charAt(0));
 			}
-			String endStr = args[4].split(STEP_DELIM)[1];
-			if (endStr.length() > 0) {
-				end = stepMap.get(endStr.charAt(0));
+			
+			if (chunks.length > 1) {
+				String endStr = chunks[1];
+				if (endStr.length() > 0) {
+					end = stepMap.get(endStr.charAt(0));
+				}
 			}
 			
 			if (start == null || end == null) {
