@@ -34,7 +34,6 @@ public class PrepareClusteringOutput extends Configured implements Tool {
 	private static final String USAGE = "PrepareClusteringOutput CLUSTER_PRESENCE_VECTORS OUTPUT [NUM_TASKS]";
 	protected static final String KMER_LENGTH = "KMER_LENGTH";
 	
-	private static final int MAX_REDUCES = 200;
 	private static final int MAX_MAPS = 200;
 
 	public static final String LOG_DELIM = ",";
@@ -87,7 +86,7 @@ public class PrepareClusteringOutput extends Configured implements Tool {
 		job.setOutputValueClass(LongWritable.class);
 		
 		job.setMapOutputKeyClass(LongWritable.class);
-		job.setMapOutputValueClass(PresenceVector.class);
+		job.setMapOutputValueClass(LongWritable.class);
 		
 		job.setMapperClass(PrepareClusteringOutput.Map.class);
 		

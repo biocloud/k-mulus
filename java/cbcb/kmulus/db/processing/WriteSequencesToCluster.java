@@ -30,7 +30,7 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 	
 	private static final Logger LOG = Logger.getLogger(WriteSequencesToCluster.class);
 	
-	private static final String USAGE = "WriteSequencesToCluster CLUSTER_INPUT SEQUENCE_INPUT BASE_OUTPUT_DIR OUTPUT_DIR [NUM_TASKS]";
+	private static final String USAGE = "WriteSequencesToCluster CLUSTER_INPUT SEQUENCE_INPUT BASE_OUTPUT_DIR OUTPUT_DIR NUM_CLUSTERS [NUM_TASKS]";
 	
 	public static final String LOG_DELIM = ",";
 	public static final String SIMPLE_FASTA_SPLIT = " ";
@@ -194,7 +194,7 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 	public int run(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 		
-		if(args.length < 4) {
+		if(args.length < 5) {
 			System.out.println(USAGE);
 			return -1;
 		}
