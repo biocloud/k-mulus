@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
@@ -24,7 +25,7 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
-import cbcb.kmulus.util.PresenceVector;
+import com.google.common.collect.Lists;
 
 public class WriteSequencesToCluster  extends Configured implements Tool {
 	
@@ -112,7 +113,7 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 		public void reduce(LongWritable key, Iterable<Text> values, Context context)
 				throws IOException, InterruptedException {
 			String sequence = null;
-			LongWritable clusterId = null;
+			List<Long> clusterIds = Lists.newArrayList();
 			
 			// Get the sequence and which cluster this sequence belongs to.
 			String line = null;
@@ -122,17 +123,19 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 				if (line.contains(" ")) {
 					sequence = line;
 				} else {
-					clusterId = new LongWritable(new Long(value.toString()));
+					clusterIds.add(new Long(value.toString()));
 				}
 			}
 			
 			// Output the sequence in fasta format to the correct hdfs directory.
-			if (sequence != null && clusterId != null) {
-				BufferedWriter bw = getBufferedWriterForCluster(clusterId.get());
-				String headerAndSequence[] = sequence.split(SIMPLE_FASTA_SPLIT);
-				// TODO(cmhill): Split the sequence into 60 character chunks. 
-				bw.write(headerAndSequence[0] + "\n" + headerAndSequence[1] + "\n");		
-			}			
+			if (sequence != null) {
+				for (long id : clusterIds) {
+					BufferedWriter bw = getBufferedWriterForCluster(id);
+					String headerAndSequence[] = sequence.split(SIMPLE_FASTA_SPLIT);
+					// TODO(cmhill): Split the sequence into 60 character chunks. 
+					bw.write(headerAndSequence[0] + "\n" + headerAndSequence[1] + "\n");		
+				}			
+			}
 		}
 		
 		/**
@@ -143,18 +146,15 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 		 * @throws IOException
 		 */
 		private BufferedWriter getBufferedWriterForCluster(long clusterId) throws IOException {
-			if (outputWriters.get(clusterId) == null) {
-				FSDataOutputStream outputStream = hdfs.create(new Path(baseOutputDir + "/" + clusterId + "/seq." + unique_id));
-				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-				
-				outputWriters.put(clusterId, writer);
-				
-				return writer;
-			} else {
-				return outputWriters.get(clusterId);
-			}
+			FSDataOutputStream outputStream = hdfs.create(new Path(baseOutputDir + "/" + clusterId + "/seq." + unique_id));
+			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
+
+			// TODO(calbach): Caching removed, for now.
+			// outputWriters.put(clusterId, writer);
+
+			return writer;
 		}
-		
+
 		/**
 		 * Close all BufferedWriters.
 		 */

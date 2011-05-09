@@ -36,8 +36,8 @@ public class CountClusterHits extends Configured implements Tool {
 	
 	protected static final String HEADER_SEQUENCE_SEPARATOR = " ";
 	
-	private static final int MAX_REDUCES = 200;
-	private static final int MAX_MAPS = 200;
+	private static final int MAX_REDUCES = 100;
+	private static final int MAX_MAPS = 100;
 
 	public static final String LOG_DELIM = ",";
 	
@@ -113,7 +113,7 @@ public class CountClusterHits extends Configured implements Tool {
 	}
 	
 	/** Counts the number of sequences mapped to each cluster center. Emits (cluster_id, count). */
-	public class CountReducer extends Reducer<LongWritable, Text, LongWritable, LongWritable> {
+	public static class CountReducer extends Reducer<LongWritable, Text, LongWritable, LongWritable> {
 		
 		@Override
 		public void reduce(LongWritable key, Iterable<Text> values, Context context)

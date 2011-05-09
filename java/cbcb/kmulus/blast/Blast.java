@@ -1,5 +1,7 @@
 package cbcb.kmulus.blast;
 
+import java.net.URI;
+
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
@@ -13,10 +15,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-
 import org.apache.log4j.Logger;
-
-import java.net.*;
 
 /**
  * Hadoop program where the mapper determines which clusters overlap with a given
