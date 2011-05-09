@@ -11,6 +11,7 @@ import cbcb.kmulus.db.cluster.ClusterPresenceVectors;
 import cbcb.kmulus.db.processing.GenerateSequencePresenceVectors;
 import cbcb.kmulus.db.processing.PrepareClusteringOutput;
 import cbcb.kmulus.db.processing.UnionClusterPresenceVectors;
+import cbcb.kmulus.db.processing.WriteClusterSequencesToHDFS;
 import cbcb.kmulus.db.processing.WriteSequencesToCluster;
 
 import com.google.common.collect.ImmutableMap;
@@ -179,12 +180,22 @@ public class PartitionDatabase {
 			case WRITE_PARTITIONS:
 				result = ToolRunner.run(
 						new WriteSequencesToCluster(),
-						new String[]{prepClusterOut, dbInput, partitionsOut, tempOut + Path.SEPARATOR + "null", numClusters});
+						new String[]{prepClusterOut, dbInput, partitionsOut, tempOut + Path.SEPARATOR + "part", numClusters});
 
 				if (result < 0) {
 					System.err.println(WriteSequencesToCluster.class.getName() + " failed.");
 					System.exit(result);
 				}
+				
+				result = ToolRunner.run(
+						new WriteClusterSequencesToHDFS(),
+						new String[]{tempOut + Path.SEPARATOR + "part", partitionsOut, tempOut + Path.SEPARATOR + "null", numClusters});
+
+				if (result < 0) {
+					System.err.println(WriteClusterSequencesToHDFS.class.getName() + " failed.");
+					System.exit(result);
+				}
+				
 				if (end == PipeStep.WRITE_PARTITIONS) {
 					break;
 				}

@@ -4,7 +4,6 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
@@ -15,8 +14,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.Reducer.Context;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -25,13 +24,11 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Lists;
-
-public class WriteSequencesToCluster  extends Configured implements Tool {
+public class WriteClusterSequencesToHDFS extends Configured implements Tool {
 	
-	private static final Logger LOG = Logger.getLogger(WriteSequencesToCluster.class);
+	private static final Logger LOG = Logger.getLogger(WriteClusterSequencesToHDFS.class);
 	
-	private static final String USAGE = "WriteSequencesToCluster CLUSTER_INPUT SEQUENCE_INPUT BASE_OUTPUT_DIR OUTPUT_DIR NUM_CLUSTERS [NUM_TASKS]";
+	private static final String USAGE = "WriteClusterSequencesToHDFS CLUSTER_INPUT SEQUENCE_INPUT BASE_OUTPUT_DIR OUTPUT_DIR NUM_CLUSTERS [NUM_TASKS]";
 	
 	public static final String LOG_DELIM = ",";
 	public static final String SIMPLE_FASTA_SPLIT = " ";
@@ -41,72 +38,7 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 	
 	private static final int MAX_REDUCES = 200;
 	private static final int MAX_MAPS = 200;
-	
-	/**
-	 * This mapper takes as input the cluster information and sequences, and outputs
-	 * two possible pairs, (seqId, cluster it belongs to), and (seqId, sequence).
-	 */
-	public static class Map extends Mapper<LongWritable, Text, LongWritable, Text> {
-		
-		@Override
-		public void map(LongWritable key, Text value, Context context) 
-				throws IOException, InterruptedException {
-			
-			String line = value.toString().trim();
-			if (line.isEmpty())
-				return;
-			
-			// Is the current line of a cluster?
-			if (!line.contains(">")) {
-				// For input 178 88, emit (178, 88)
-				String[] tuple = line.split("\t");
-				context.write(new LongWritable(Long.parseLong(tuple[0])), new Text(tuple[1]));
-				
-			} else {
-				// TODO(cmhill) Error check.
-				// For the sequence ">118 acgghachfcg", emit (118, '>118 acgg...')
-				int spaceIndex = line.indexOf(" ");
-				
-				// Skip the header character.
-				LongWritable seqId = new LongWritable(new Integer(line.substring(1, spaceIndex)));
-				context.write(seqId, value);
-			}
-		}
-	}
-	
-	/**
-	 * This reducer receives a sequence Id, and the cluster and sequence to which it belongs.
-	 * (cluster_id, sequence) is emitted.
-	 */
-	public static class ClusterSequencePairReduce extends Reducer<LongWritable, Text, LongWritable, Text>   {
 
-		public void reduce(LongWritable key, Iterable<Text> values, Context context)
-				throws IOException, InterruptedException {
-			String sequence = null;
-			long clusterId = -1L;
-			
-			// Get the sequence and which cluster this sequence belongs to.
-			String line = null;
-			int count = 0;
-			for (Text value : values) {
-				line = value.toString();
-				
-				if (line.contains(" ")) {
-					sequence = line;
-				} else {
-					clusterId = Long.parseLong(value.toString());
-				}
-				count++;
-			}
-			if (count != 2) {
-				throw new IOException("Sequence '" + key.get() + "' had " + count + " reduce "
-						+ "values. Expected 2 (one for the sequence, one for the cluster).");
-			}
-			
-			context.write(new LongWritable(clusterId), new Text(sequence));
-		}
-	}
-	
 	/**
 	 * This reducer receives a sequence Id, and the cluster and sequence to which it belongs.
 	 * During the reduce phase, the sequence is written to the base_directory/cluster_id/sequence.
@@ -145,34 +77,22 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 		
 		public void reduce(LongWritable key, Iterable<Text> values, Context context)
 				throws IOException, InterruptedException {
-			String sequence = null;
-			long clusterId = -1L;
+
+			// Store the sequences in fasta format.
+			StringBuilder sequences = new StringBuilder("");
 			
-			// Get the sequence and which cluster this sequence belongs to.
 			String line = null;
-			int count = 0;
 			for (Text value : values) {
-				line = value.toString();
-				
-				if (line.contains(" ")) {
-					sequence = line;
-				} else {
-					clusterId = Long.parseLong(value.toString());
-				}
-				count++;
-			}
-			if (count != 2) {
-				throw new IOException("Sequence '" + key.get() + "' had " + count + " reduce "
-						+ "values. Expected 2 (one for the sequence, one for the cluster).");
+				line = value.toString().trim();
+				String headerAndSequence[] = line.split(SIMPLE_FASTA_SPLIT); 
+				sequences.append(headerAndSequence[0] + "\n" + headerAndSequence[1] + "\n");
 			}
 			
 			// Output the sequence in fasta format to the correct hdfs directory.
-			if (sequence != null) {
-				BufferedWriter bw = getBufferedWriterForCluster(clusterId);
-				String headerAndSequence[] = sequence.split(SIMPLE_FASTA_SPLIT);
-				// TODO(cmhill): Split the sequence into 60 character chunks. 
-				bw.write(headerAndSequence[0] + "\n" + headerAndSequence[1] + "\n");	
-				//bw.close();
+			if (sequences != null) {
+				BufferedWriter bw = getBufferedWriterForCluster(key.get());
+				bw.write(sequences.toString());	
+				bw.close();
 			}
 		}
 		
@@ -184,12 +104,9 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 		 * @throws IOException
 		 */
 		private BufferedWriter getBufferedWriterForCluster(long clusterId) throws IOException {
-			if (!outputWriters.containsKey(clusterId)) {
-				FSDataOutputStream outputStream = hdfs.create(new Path(baseOutputDir + "/" + clusterId + "/seq." + unique_id));
-				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-				outputWriters.put(clusterId, writer);
-			}
-			return outputWriters.get(clusterId);
+			FSDataOutputStream outputStream = hdfs.create(new Path(baseOutputDir + "/" + clusterId + "/seq." + unique_id));
+			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
+			return writer;
 		}
 
 		/**
@@ -212,8 +129,8 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 		int result = 1;
 
 		try {
-			result = ToolRunner.run(new WriteSequencesToCluster(), args);
 			result = ToolRunner.run(new WriteClusterSequencesToHDFS(), args);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("Job failed.");
@@ -225,25 +142,23 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 	public int run(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 		
-		if(args.length < 5) {
+		if(args.length < 3) {
 			System.out.println(USAGE);
 			return -1;
 		}
 		
-		String clusterInputPath = args[0];
-		String sequenceInputPath = args[1];
-		String baseOutputPath = args[2];
-		String outputDir = args[3];
-		int numberOfClusters = new Integer(args[4]);
+		String sequenceInputPath = args[0];
+		String baseOutputPath = args[1];
+		String outputDir = args[2];
+		int numberOfClusters = new Integer(args[3]);
 		
-		LOG.info("Tool name: WriteSequencesToCluster");
-		LOG.info(" - clusterInputDir: " + clusterInputPath);
+		LOG.info("Tool name: WriteClusterSequencesToHDFS");
 		LOG.info(" - sequenceInputDir: " + sequenceInputPath);
 		LOG.info(" - baseOutputPath: " + baseOutputPath);
 		LOG.info(" - numberOfClusters: " + numberOfClusters);
 		
-		Job job = new Job(getConf(), "WriteSequencesToCluster");
-		job.setJarByClass(WriteSequencesToCluster.class);
+		Job job = new Job(getConf(), "WriteClusterSequencesToHDFS");
+		job.setJarByClass(WriteClusterSequencesToHDFS.class);
 
 		job.getConfiguration().set("mapred.child.java.opts", "-Xmx2048M");
 		
@@ -252,13 +167,12 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 		job.setMapOutputKeyClass(LongWritable.class);
 		job.setMapOutputValueClass(Text.class);
 
-		job.setMapperClass(WriteSequencesToCluster.Map.class);
-		job.setReducerClass(WriteSequencesToCluster.ClusterSequencePairReduce.class);
+		job.setReducerClass(WriteClusterSequencesToHDFS.Reduce.class);
 
 		job.setInputFormatClass(TextInputFormat.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
 
-		FileInputFormat.addInputPath(job, new Path(clusterInputPath));
+		// FileInputFormat.addInputPath(job, new Path(clusterInputPath));
 		FileInputFormat.addInputPath(job, new Path(sequenceInputPath));
 		
 		// Useless output directory.
@@ -267,8 +181,8 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 		int mapTasks = MAX_MAPS;
 		int reduceTasks = MAX_REDUCES;
 
-		if(args.length > 5) {
-			int numTasks = Integer.parseInt(args[5]);
+		if(args.length > 4) {
+			int numTasks = Integer.parseInt(args[4]);
 			mapTasks = numTasks;
 			reduceTasks = numTasks;
 		}
