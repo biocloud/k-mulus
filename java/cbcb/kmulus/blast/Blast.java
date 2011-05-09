@@ -91,8 +91,8 @@ public class Blast extends Configured implements Tool {
 		int mapTasks = MAX_MAPS;
 		int reduceTasks = MAX_REDUCES;
 
-		if(args.length > 3) {
-			int numTasks = Integer.parseInt(args[3]);
+		if(args.length > 4) {
+			int numTasks = Integer.parseInt(args[4]);
 			mapTasks = numTasks;
 			reduceTasks = numTasks;	
 		}
