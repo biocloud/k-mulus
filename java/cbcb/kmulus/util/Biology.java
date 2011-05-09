@@ -23,7 +23,7 @@ public class Biology {
 	public static final char[] AMINO_ACIDS = {'A', 'R', 'N', 'D', 'C', 'E', 'Q', 'G', 'H', 'I', 'L',
 		'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '*', 'U', 'O'};
 	public static final char TERMINATOR = '*';
-	public static final Set<Character> AMBIGUOUS_CODES = ImmutableSet.of('B', 'Z', 'X', '-');
+	public static final Set<Character> AMBIGUOUS_CODES = ImmutableSet.of('B', 'Z', 'X', 'J', '-');
 
 	public static final AATable defaultTable = 
 		new AATable(ImmutableMap.<String, Character>builder()
