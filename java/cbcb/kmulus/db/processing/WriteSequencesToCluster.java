@@ -133,7 +133,8 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 					BufferedWriter bw = getBufferedWriterForCluster(id);
 					String headerAndSequence[] = sequence.split(SIMPLE_FASTA_SPLIT);
 					// TODO(cmhill): Split the sequence into 60 character chunks. 
-					bw.write(headerAndSequence[0] + "\n" + headerAndSequence[1] + "\n");		
+					bw.write(headerAndSequence[0] + "\n" + headerAndSequence[1] + "\n");	
+					bw.close();
 				}			
 			}
 		}
