@@ -78,11 +78,14 @@ public class PartitionDatabase {
 						new String[]{pvOut, clusterOut, numSeq, numClusters});
 				
 				runIter++;
-			} while (result >= 0);
-			result = ToolRunner.run(new Configuration(), 
-					new ClusterPresenceVectors(),
-					new String[]{pvOut, clusterOut, numSeq, numClusters});
-
+			} while (result == ClusterPresenceVectors.CODE_LOOP);
+			
+			if (result == ClusterPresenceVectors.CODE_CONVERGED) {
+				result = ToolRunner.run(new Configuration(), 
+						new ClusterPresenceVectors(),
+						new String[]{pvOut, clusterOut, numSeq, numClusters});
+			}
+			
 			if (result < 0) {
 				System.err.println(ClusterPresenceVectors.class.getName() + " failed.");
 				System.exit(result);

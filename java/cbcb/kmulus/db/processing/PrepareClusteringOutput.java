@@ -40,8 +40,8 @@ public class PrepareClusteringOutput extends Configured implements Tool {
 	public static final String LOG_DELIM = ",";
 	
 	/**
-	 * This mapper takes as input the cluster information and sequences, and outputs
-	 * (seqId, cluster it belongs to)
+	 * This mapper takes as input the (cluster_id, presence_vector), and outputs
+	 * (seqId, cluster_id)
 	 */
 	public static class Map extends Mapper<LongWritable, PresenceVector, LongWritable, LongWritable> {
 
@@ -98,15 +98,11 @@ public class PrepareClusteringOutput extends Configured implements Tool {
 		FileOutputFormat.setOutputPath(job, new Path(outputPath));
 		
 		int mapTasks = MAX_MAPS;
-		int reduceTasks = MAX_REDUCES;
 
 		if(args.length > 2) {
 			int numTasks = Integer.parseInt(args[2]);
 			mapTasks = numTasks;
-			reduceTasks = numTasks;	
 		}
-		
-		job.setNumReduceTasks(reduceTasks);
 		
 		// Delete the output directory if it exists already.
 		FileSystem.get(job.getConfiguration()).delete(new Path(outputPath), true);
@@ -116,7 +112,7 @@ public class PrepareClusteringOutput extends Configured implements Tool {
 		boolean result = job.waitForCompletion(true);
 		
 		LOG.info((System.currentTimeMillis() - startTime) + 
-				LOG_DELIM + mapTasks + LOG_DELIM + reduceTasks);
+				LOG_DELIM + mapTasks);
 
 		return result ? 0 : 1;
 	}

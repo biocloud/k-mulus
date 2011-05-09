@@ -48,9 +48,15 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 	
 	protected static final int DEFAULT_KMER_LENGTH = 3;
 	
-	private static final int MAX_REDUCES = 200;
-	private static final int MAX_MAPS = 200;
+	private static final int MAX_REDUCES = 100;
+	private static final int MAX_MAPS = 100;
 	private static final int MAX_ITERATIONS = 1;
+	
+	/* Runtime return codes. */
+	public static final int CODE_ERROR = -1;
+	public static final int CODE_LOOP = 0;
+	public static final int CODE_FINISHED = 1;
+	public static final int CODE_CONVERGED = 2;
 	
 	protected final int runIter;
 	protected final boolean finished;
@@ -193,7 +199,9 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 			runIter++;
 		} while (res == 0);
 		
-		res = ToolRunner.run(new Configuration(), new ClusterPresenceVectors(), args);
+		if (res == CODE_CONVERGED) {
+			res = ToolRunner.run(new Configuration(), new ClusterPresenceVectors(), args);
+		}
 		System.exit(res);
 	}
 	
@@ -202,7 +210,7 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 
 		if (args.length < 4) {
 			System.out.println(USAGE);
-			return -1;
+			return CODE_ERROR;
 		}
 
 		String sequenceInputPath = args[0];
@@ -234,9 +242,6 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		job.setMapOutputValueClass(PresenceVector.class);
 
 		job.setMapperClass(ClusterPresenceVectors.Map.class);
-		if (!finished) {
-			job.setReducerClass(KMeansReducer.class);
-		}
 		
 		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
@@ -273,9 +278,7 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		if (finished || runIter - 2 > MAX_ITERATIONS) {
 			
 			job.setOutputKeyClass(LongWritable.class);
-			// job.setOutputValueClass(Text.class);
-			// job.setOutputFormatClass(TextOutputFormat.class);
-			
+			job.setOutputValueClass(PresenceVector.class);
 			job.setMapOutputKeyClass(LongWritable.class);
 			job.setMapOutputValueClass(PresenceVector.class);
 
@@ -283,9 +286,10 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 			FileOutputFormat.setOutputPath(job, new Path(outputPath + Path.SEPARATOR + FINAL_DIR));
 			
 			job.waitForCompletion(true);		
-			return 1;
+			return CODE_FINISHED;
 
 		} else {
+			job.setReducerClass(KMeansReducer.class);
 			FileOutputFormat.setOutputPath(job, new Path(tempInput + "/output-"
 					+ (runIter + 1)));
 		}
@@ -343,25 +347,6 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		LOG.info((System.currentTimeMillis() - startTime) + LOG_DELIM
 				+ mapTasks + LOG_DELIM + reduceTasks);
 
-		return result ? 0 : 1;
-	}
-	
-	/**
-	 * Create a random bit vector of length 20^k bits.
-	 * 
-	 * @param kmerLength
-	 * @return
-	 */
-	private PresenceVector createRandomBitVector(int kmerLength) {
-		PresenceVector pv = new PresenceVector(kmerLength);
-		
-		Random r = new Random();
-		
-		// TODO(cmhill): Change 200 to avg_sequence_length.
-		for (int i = 0; i < 200; i++) {
-			pv.setKmer(r.nextInt((int) Math.pow(Biology.AMINO_ACIDS.length, kmerLength)));
-		}
-		
-		return pv;
+		return result ? CODE_LOOP : CODE_ERROR;
 	}
 }
