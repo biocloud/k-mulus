@@ -66,6 +66,7 @@ public class WriteClusterSequencesToHDFS extends Configured implements Tool {
 			}
 		}
 		
+		@Override
 		public void reduce(LongWritable key, Iterable<Text> values, Context context)
 				throws IOException, InterruptedException {
 
