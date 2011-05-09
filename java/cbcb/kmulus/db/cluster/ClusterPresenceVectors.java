@@ -50,7 +50,7 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 	
 	private static final int MAX_REDUCES = 100;
 	private static final int MAX_MAPS = 100;
-	private static final int MAX_ITERATIONS = 1;
+	private static final int MAX_ITERATIONS = 5;
 	
 	/* Runtime return codes. */
 	public static final int CODE_ERROR = -1;
