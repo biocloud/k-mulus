@@ -149,6 +149,15 @@ public class PresenceVector implements Writable {
 		return id;
 	}
 	
+	/** Returns the number of bits set in the vector. */
+	public int getCount() {
+		int count = 0;
+		for (int i = 0; i < bits.length; i++) {
+			count += countBits(bits[i]);
+		}
+		return count;
+	}
+	
 	/**
 	 * Checks if this intersects with the given {@link PresenceVector}.
 	 * 
