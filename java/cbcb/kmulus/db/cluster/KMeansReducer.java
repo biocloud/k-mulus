@@ -26,7 +26,6 @@ public class KMeansReducer extends Reducer<LongWritable, PresenceVector, LongWri
 	private int numCenters;
 
 	protected void setup(Context context) throws IOException, InterruptedException {
-		
 		Configuration conf = context.getConfiguration();
 		kmerLength = conf.getInt(ClusterPresenceVectors.KMER_LENGTH, 3);
 		numCenters = conf.getInt(ClusterPresenceVectors.NUM_CLUSTERS, 10);

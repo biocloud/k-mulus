@@ -1,15 +1,8 @@
 package cbcb.kmulus.db.processing;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -20,12 +13,10 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
-
-import com.google.common.collect.Lists;
 
 public class WriteSequencesToCluster  extends Configured implements Tool {
 	
@@ -107,107 +98,6 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 		}
 	}
 	
-	/**
-	 * This reducer receives a sequence Id, and the cluster and sequence to which it belongs.
-	 * During the reduce phase, the sequence is written to the base_directory/cluster_id/sequence.
-	 */
-	public static class Reduce extends Reducer<LongWritable, Text, LongWritable, Text>   {
-		private FileSystem hdfs;
-		private String baseOutputDir;
-		private boolean failedSetup = false;
-		private int numberOfClusters;
-
-		/* Each key is the cluster center and value is the outputWriter to the 
-		respective file: [BASE_OUTPUT_DIR]/[CLUSTER_ID]/seq.[RANDOM_NUMBER] */
-		private HashMap<Long, BufferedWriter> outputWriters;
-
-		private int unique_id;
-		
-		@Override
-		protected void setup(Context context) {
-			Configuration conf = context.getConfiguration();
-			
-			baseOutputDir = conf.get(BASE_OUTPUT_DIR);
-			numberOfClusters = conf.getInt(NUM_CLUSTERS, 1);
-			
-			outputWriters = new HashMap<Long, BufferedWriter>();
-			
-			// TODO(cmhill): Better way to get a "unique" number for the reducer.
-			Random rand = new Random();
-			unique_id = rand.nextInt(10000000);
-			
-			try {
-				hdfs = FileSystem.get(conf);
-			} catch (IOException e) {
-				failedSetup = true;
-			}
-		}
-		
-		public void reduce(LongWritable key, Iterable<Text> values, Context context)
-				throws IOException, InterruptedException {
-			String sequence = null;
-			long clusterId = -1L;
-			
-			// Get the sequence and which cluster this sequence belongs to.
-			String line = null;
-			int count = 0;
-			for (Text value : values) {
-				line = value.toString();
-				
-				if (line.contains(" ")) {
-					sequence = line;
-				} else {
-					clusterId = Long.parseLong(value.toString());
-				}
-				count++;
-			}
-			if (count != 2) {
-				throw new IOException("Sequence '" + key.get() + "' had " + count + " reduce "
-						+ "values. Expected 2 (one for the sequence, one for the cluster).");
-			}
-			
-			// Output the sequence in fasta format to the correct hdfs directory.
-			if (sequence != null) {
-				BufferedWriter bw = getBufferedWriterForCluster(clusterId);
-				String headerAndSequence[] = sequence.split(SIMPLE_FASTA_SPLIT);
-				// TODO(cmhill): Split the sequence into 60 character chunks. 
-				bw.write(headerAndSequence[0] + "\n" + headerAndSequence[1] + "\n");	
-				//bw.close();
-			}
-		}
-		
-		/**
-		 * Return the BufferedWriter for the hdfs file of the cluster id.
-		 * 
-		 * @param clusterId
-		 * @return BufferedWriter for the hdfs file "[BASE_OUTPUT_DIR]/[CLUSTER_ID]/seq.[RANDOM_NUMBER]"
-		 * @throws IOException
-		 */
-		private BufferedWriter getBufferedWriterForCluster(long clusterId) throws IOException {
-			if (!outputWriters.containsKey(clusterId)) {
-				FSDataOutputStream outputStream = hdfs.create(new Path(baseOutputDir + "/" + clusterId + "/seq." + unique_id));
-				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-				outputWriters.put(clusterId, writer);
-			}
-			return outputWriters.get(clusterId);
-		}
-
-		/**
-		 * Close all BufferedWriters.
-		 */
-		@Override
-		protected void cleanup (Context context) {
-			for (long key : outputWriters.keySet()) {
-				try {
-					outputWriters.get(key).close();
-				} catch (IOException e) {
-					LOG.info("Error during reducer clean up");
-					e.printStackTrace();
-				}
-			}
-		}
-	}
-	
 	public static void main(String[] args) {
 		int result = 1;
 
@@ -256,7 +146,7 @@ public class WriteSequencesToCluster  extends Configured implements Tool {
 		job.setReducerClass(WriteSequencesToCluster.ClusterSequencePairReduce.class);
 
 		job.setInputFormatClass(TextInputFormat.class);
-		job.setOutputFormatClass(TextOutputFormat.class);
+		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		FileInputFormat.addInputPath(job, new Path(clusterInputPath));
 		FileInputFormat.addInputPath(job, new Path(sequenceInputPath));

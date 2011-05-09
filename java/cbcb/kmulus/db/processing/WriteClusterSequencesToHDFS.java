@@ -3,7 +3,6 @@ package cbcb.kmulus.db.processing;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.HashMap;
 import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
@@ -15,9 +14,9 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.Reducer.Context;
+import org.apache.hadoop.mapreduce.Mapper.Context;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
@@ -39,19 +38,13 @@ public class WriteClusterSequencesToHDFS extends Configured implements Tool {
 	private static final int MAX_REDUCES = 200;
 	private static final int MAX_MAPS = 200;
 
-	/**
-	 * This reducer receives a sequence Id, and the cluster and sequence to which it belongs.
-	 * During the reduce phase, the sequence is written to the base_directory/cluster_id/sequence.
-	 */
+	
 	public static class Reduce extends Reducer<LongWritable, Text, LongWritable, Text>   {
 		private FileSystem hdfs;
 		private String baseOutputDir;
 		private boolean failedSetup = false;
 		private int numberOfClusters;
 
-		/* Each key is the cluster center and value is the outputWriter to the 
-		respective file: [BASE_OUTPUT_DIR]/[CLUSTER_ID]/seq.[RANDOM_NUMBER] */
-		private HashMap<Long, BufferedWriter> outputWriters;
 
 		private int unique_id;
 		
@@ -61,8 +54,6 @@ public class WriteClusterSequencesToHDFS extends Configured implements Tool {
 			
 			baseOutputDir = conf.get(BASE_OUTPUT_DIR);
 			numberOfClusters = conf.getInt(NUM_CLUSTERS, 1);
-			
-			outputWriters = new HashMap<Long, BufferedWriter>();
 			
 			// TODO(cmhill): Better way to get a "unique" number for the reducer.
 			Random rand = new Random();
@@ -78,22 +69,16 @@ public class WriteClusterSequencesToHDFS extends Configured implements Tool {
 		public void reduce(LongWritable key, Iterable<Text> values, Context context)
 				throws IOException, InterruptedException {
 
-			// Store the sequences in fasta format.
-			StringBuilder sequences = new StringBuilder("");
-			
+			// Output the sequence in fasta format to the correct hdfs directory.
+			BufferedWriter bw = getBufferedWriterForCluster(key.get());
+
 			String line = null;
 			for (Text value : values) {
 				line = value.toString().trim();
 				String headerAndSequence[] = line.split(SIMPLE_FASTA_SPLIT); 
-				sequences.append(headerAndSequence[0] + "\n" + headerAndSequence[1] + "\n");
+				bw.write(headerAndSequence[0] + "\n" + headerAndSequence[1] + "\n");
 			}
-			
-			// Output the sequence in fasta format to the correct hdfs directory.
-			if (sequences != null) {
-				BufferedWriter bw = getBufferedWriterForCluster(key.get());
-				bw.write(sequences.toString());	
-				bw.close();
-			}
+			bw.close();
 		}
 		
 		/**
@@ -107,21 +92,6 @@ public class WriteClusterSequencesToHDFS extends Configured implements Tool {
 			FSDataOutputStream outputStream = hdfs.create(new Path(baseOutputDir + "/" + clusterId + "/seq." + unique_id));
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
 			return writer;
-		}
-
-		/**
-		 * Close all BufferedWriters.
-		 */
-		@Override
-		protected void cleanup (Context context) {
-			for (long key : outputWriters.keySet()) {
-				try {
-					outputWriters.get(key).close();
-				} catch (IOException e) {
-					LOG.info("Error during reducer clean up");
-					e.printStackTrace();
-				}
-			}
 		}
 	}
 	
@@ -169,7 +139,7 @@ public class WriteClusterSequencesToHDFS extends Configured implements Tool {
 
 		job.setReducerClass(WriteClusterSequencesToHDFS.Reduce.class);
 
-		job.setInputFormatClass(TextInputFormat.class);
+		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
 
 		// FileInputFormat.addInputPath(job, new Path(clusterInputPath));

@@ -97,13 +97,15 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 			int iteration = new Integer(context.getConfiguration().getInt(ITERATION, -1));
 			
 			kmerLength = context.getConfiguration().getInt(KMER_LENGTH, 3);
-			numCenters = context.getConfiguration().getInt(NUM_CLUSTERS, 10);
+			numCenters = context.getConfiguration().getInt(NUM_CLUSTERS, -1);
 			debug = context.getConfiguration().getBoolean(DEBUG, false);
 			
-			String input = context.getConfiguration().get(INPUT_PATH);
+			if (numCenters < 0) {
+				throw new IOException("The number centers was not given in the configuration.");
+			}
 			
-			if (debug)
-				LOG.info("Loading cluster centers from: " + input + "/output-" + iteration);
+			String input = context.getConfiguration().get(INPUT_PATH);
+			LOG.info("Loading cluster centers from: " + input + "/output-" + iteration);
 			
 			initializeCenters();
 			
@@ -133,8 +135,12 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 				reader.close();
 			}
 			
-			if (debug)
-				LOG.info("Centers: " + centers.toString());
+			// The number of centers may have been reduced after previous iterations.
+			numCenters = currCenter;
+			
+			if (debug) {
+				LOG.info("Number of centers loaded: " + currCenter);
+			}
 		}
 
 		/**
@@ -148,8 +154,11 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		}
 		
 		public void map(LongWritable key, PresenceVector value, Context context) 
-			throws IOException, InterruptedException {
-			
+				throws IOException, InterruptedException {
+			if (centers == null) {
+				throw new IOException("Centers are uninitialized.");
+			}
+			 
 			// Go through each center and compute minimum distance.
 			Long closestCenter = new Long(-1);
 			int minDistance = Integer.MAX_VALUE;
@@ -157,11 +166,19 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 			// Store the closest centers.
 			ArrayList<Long> closestCenters = new ArrayList<Long>();
 			
-			for (int i = 0; i < centers.length; i++) {
-				
+			for (int i = 0; i < numCenters; i++) {
+				if (centers[i] == null) {
+					throw new IOException("Center '" + i + "' was uninitialized.");
+				}
 				int distance = centers[i].getHammingDistance(value);
 				
-				if (distance < minDistance) {
+				// If the current sequence is the same as the center, MUST map to it.
+				if (centers[i].getId() == value.getId() && centers[i].getId() >= 0) {
+					closestCenters.clear();
+					closestCenters.add(new Long(i));
+					break;
+					
+			    } else if (distance < minDistance) {
 					closestCenter = new Long(i);
 					minDistance = distance;
 					closestCenters.clear();
@@ -180,6 +197,7 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 			}
 			
 			if (closestCenter == -1) {
+				throw new IOException("No nearest center found for sequence: " + key.get());
 				
 			} else {
 				context.write(new LongWritable(closestCenter), value);
@@ -219,8 +237,6 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		String numSequences = args[2];
 		String numClusters = args[3];
 		
-		boolean debug = false;
-		
 		LOG.info("Tool name: ClusterPresenceVectors");
 		LOG.info(" - sequencePresenceVectors: " + sequenceInputPath);
 		LOG.info(" - outputDir: " + outputPath);
@@ -234,6 +250,7 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		conf.setInt(ITERATION, runIter);
 		conf.set(INPUT_PATH, tempInput);
 		conf.setInt(KMER_LENGTH, 3);
+		conf.setBoolean(DEBUG, true);
 
 		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(PresenceVector.class);
@@ -262,7 +279,6 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 				reduceTasks = numTasks;
 				
 				if (args.length > 6) {
-					debug = true;
 					conf.setBoolean(DEBUG, true);
 				}
 			}

@@ -21,7 +21,7 @@ import cbcb.kmulus.util.PresenceVector;
 
 /**
  * Prepares the output of the clustering stage {@link ClusterPresenceVectors} for the database
- * partitioning to be done by {@link WriteSequencesToCluster}.
+ * partitioning to be done by {@link ReadSequencesForCluster}.
  * 
  * @author CH Albach
  */
