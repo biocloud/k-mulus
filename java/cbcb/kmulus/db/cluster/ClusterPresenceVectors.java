@@ -52,6 +52,9 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 	private static final int MAX_MAPS = 100;
 	private static final int MAX_ITERATIONS = 5;
 	
+	private static final int LARGE_PRIME1 = 27277;
+	private static final int LARGE_PRIME2 = 30707;
+	
 	/* Runtime return codes. */
 	public static final int CODE_ERROR = -1;
 	public static final int CODE_LOOP = 0;
@@ -313,11 +316,16 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		FileSystem fs = FileSystem.get(conf);
 
 		if (runIter == 0) {
-			Random r = new Random();
+			int index = new Random().nextInt();
+			int largePrime = maxSequenceNumber == LARGE_PRIME1 ? LARGE_PRIME2 : LARGE_PRIME1;
 			TreeSet<Integer> t = new TreeSet<Integer>();
-			while (t.size() < clusters)
-				t.add(r.nextInt(maxSequenceNumber));
-
+			
+			// Adding a large prime will eventually visit all sequences without repeating.
+			while (t.size() < clusters) {
+				t.add(index);
+				index = (index + largePrime) % maxSequenceNumber;
+			}
+				
 			fs = FileSystem.get(conf);
 			
 			int currPart = 0;
