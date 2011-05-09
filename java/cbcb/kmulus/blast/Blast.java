@@ -27,13 +27,15 @@ public class Blast extends Configured implements Tool {
 
 	private static final Logger LOG = Logger.getLogger(Blast.class);
 
-	private static final String USAGE = "Blast SEQUENCE_INPUT CLUSTER_INPUT OUTPUT [NUM_TASKS]";
+	private static final String USAGE = "Blast SEQUENCE_INPUT CLUSTER_INPUT OUTPUT NUM_CENTERS [NUM_TASKS]";
 	
-	protected static final String ALPHABET_SIZE = "ALPHABET_SIZE";
-	protected static final String BLAST_DATABASES = "BLAST_DATABASES";
-	protected static final String CLUSTER_DIR = "CLUSTER_DIR";
+	public static final String ALPHABET_SIZE = "ALPHABET_SIZE";
+	public static final String BLAST_DATABASES = "BLAST_DATABASES";
+	public static final String CLUSTER_DIR = "CLUSTER_DIR";
+	public static final String NUM_CENTERS = "NUM_CENTERS";
+	public static final String KMER_LENGTH = "KMER_LENGTH";
+	
 	protected static final String HEADER_SEQUENCE_SEPARATOR = " ";
-	protected static final String KMER_LENGTH = "KMER_LENGTH";
 	
 	private static final int MAX_REDUCES = 200;
 	private static final int MAX_MAPS = 200;
@@ -53,7 +55,7 @@ public class Blast extends Configured implements Tool {
 
 	public int run(String[] args) throws Exception {
 
-		if (args.length < 3) {
+		if (args.length < 4) {
 			System.out.println(USAGE);
 			return -1;
 		}
@@ -61,6 +63,7 @@ public class Blast extends Configured implements Tool {
 		String sequenceInputPath = args[0];
 		String clusterInputPath = args[1];
 		String outputPath = args[2];
+		int numCenters = Integer.parseInt(args[3]);
 
 		LOG.info("Tool name: Blast");
 		LOG.info(" - sequenceInputDir: " + sequenceInputPath);
@@ -97,6 +100,7 @@ public class Blast extends Configured implements Tool {
 		job.setNumReduceTasks(reduceTasks);
 		
 		job.getConfiguration().set(CLUSTER_DIR, clusterInputPath);
+		job.getConfiguration().setInt(NUM_CENTERS, numCenters);
 		
 		// TODO(cmhill): Remove since, it's always using this symlink.
 		job.getConfiguration().set(BLAST_DATABASES, "blastdbs");

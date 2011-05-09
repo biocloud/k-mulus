@@ -98,6 +98,7 @@ public class BlastMapper extends Mapper<LongWritable, Text, LongWritable, Text> 
 		Configuration conf = context.getConfiguration();
 		kmerLength = conf.getInt(Blast.KMER_LENGTH, 3);
 		alphabetSize = conf.getInt(Blast.ALPHABET_SIZE, Biology.AMINO_ACIDS.length);
+		numCenters = conf.getInt(Blast.NUM_CENTERS, -1);
 		
 		try {
 			loadClusters(conf);

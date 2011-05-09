@@ -32,13 +32,9 @@ import cbcb.kmulus.blast.BlastMapper;
 public class CountClusterHits extends Configured implements Tool {
 
 	private static final Logger LOG = Logger.getLogger(CountClusterHits.class);
-	private static final String USAGE = "Blast SEQUENCE_INPUT CLUSTER_INPUT OUTPUT [NUM_TASKS]";
+	private static final String USAGE = "CountClusterHits SEQUENCE_INPUT CLUSTER_INPUT OUTPUT NUM_CLUSTERS [NUM_TASKS]";
 	
-	protected static final String ALPHABET_SIZE = "ALPHABET_SIZE";
-	protected static final String BLAST_DATABASES = "BLAST_DATABASES";
-	protected static final String CLUSTER_DIR = "CLUSTER_DIR";
 	protected static final String HEADER_SEQUENCE_SEPARATOR = " ";
-	protected static final String KMER_LENGTH = "KMER_LENGTH";
 	
 	private static final int MAX_REDUCES = 200;
 	private static final int MAX_MAPS = 200;
@@ -58,7 +54,7 @@ public class CountClusterHits extends Configured implements Tool {
 
 	public int run(String[] args) throws Exception {
 
-		if (args.length < 3) {
+		if (args.length < 4) {
 			System.out.println(USAGE);
 			return -1;
 		}
@@ -66,6 +62,7 @@ public class CountClusterHits extends Configured implements Tool {
 		String sequenceInputPath = args[0];
 		String clusterInputPath = args[1];
 		String outputPath = args[2];
+		int numCenters = Integer.parseInt(args[3]);
 
 		LOG.info("Tool name: " + CountClusterHits.class.getName());
 		LOG.info(" - sequenceInputDir: " + sequenceInputPath);
@@ -101,7 +98,8 @@ public class CountClusterHits extends Configured implements Tool {
 		
 		job.setNumReduceTasks(reduceTasks);
 		
-		job.getConfiguration().set(CLUSTER_DIR, clusterInputPath);
+		job.getConfiguration().set(Blast.CLUSTER_DIR, clusterInputPath);
+		job.getConfiguration().setInt(Blast.NUM_CENTERS, numCenters);
 		
 		// Delete the output directory if it exists already.
 		FileSystem.get(job.getConfiguration()).delete(new Path(outputPath), true);
