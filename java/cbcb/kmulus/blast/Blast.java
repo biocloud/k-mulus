@@ -90,8 +90,8 @@ public class Blast extends Configured implements Tool {
 		int mapTasks = MAX_MAPS;
 		int reduceTasks = MAX_REDUCES;
 
-		if(args.length > 4) {
-			int numTasks = Integer.parseInt(args[4]);
+		if(args.length > 5) {
+			int numTasks = Integer.parseInt(args[5]);
 			mapTasks = numTasks;
 			reduceTasks = numTasks;	
 		}
@@ -105,7 +105,7 @@ public class Blast extends Configured implements Tool {
 		job.getConfiguration().set(BLAST_DATABASES, "blastdbs");
 		
 		// Add the blastdbs to the DistributedCache.
-		URI partitionUri = new URI(args[3] + "#blastdbs"); 
+		URI partitionUri = new URI(args[4] + "#blastdbs"); 
 		DistributedCache.addCacheArchive(partitionUri, job.getConfiguration()); 
 		DistributedCache.createSymlink(job.getConfiguration());
 		

@@ -115,13 +115,6 @@ public class BlastReducer extends Reducer<LongWritable, Text, Text, Text> {
 		StringBuilder results = new StringBuilder("");
 		List<String> arguments = new ArrayList<String>();
 		
-		/* "ls -l" command
-		arguments.add("ls");
-		arguments.add("-l");
-		results.append("Running command 'ls -l': \n" + runCommand(arguments));
-		arguments.clear();
-		*/
-		
 		// Blast command has to be broken down into arguments.  
 		// because of ProcessBuilder. TODO(cmhill): revert to old way.
 		arguments.add("./blastall");
