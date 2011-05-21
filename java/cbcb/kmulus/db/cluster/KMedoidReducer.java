@@ -1,7 +1,9 @@
 package cbcb.kmulus.db.cluster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import cbcb.kmulus.util.Biology;
 import cbcb.kmulus.util.PresenceVector;
@@ -38,12 +40,13 @@ public class KMedoidReducer extends Reducer<LongWritable, PresenceVector, LongWr
 
 		if (debug)
 			LOG.info("RedKey: " + key.toString());
-		PresenceVector [] vectors = new PresenceVector[(int) Math.ceil(Math.pow(Biology.AMINO_ACIDS.length, kmerLength))];
+		
 		int numOfSequences = 0;
+		List<PresenceVector> vectors = new ArrayList<PresenceVector>();
 		
 		// copy all values
-		for (PresenceVector value : values) {
-			vectors[numOfSequences] = value;			
+		for (PresenceVector value : values) {			
+			vectors.add(new PresenceVector(value));
 			++numOfSequences;			
 		}
 
@@ -53,12 +56,12 @@ public class KMedoidReducer extends Reducer<LongWritable, PresenceVector, LongWr
 		
 		PresenceVector clusterCenter = null;
 		int minDistance = Integer.MAX_VALUE;
-		for (int i = 0; i < vectors.length; i++) {
-			PresenceVector tempCenter = vectors[i];
+		for (int i = 0; i < vectors.size(); i++) {
+			PresenceVector tempCenter = vectors.get(i);
 			int distance = 0;
 			
-			for(int j=0; j < vectors.length; j++){
-				distance+= tempCenter.getHammingDistance(vectors[j]);
+			for(int j=0; j < vectors.size(); j++){
+				distance+= tempCenter.getHammingDistance(vectors.get(j));
 			}
 			
 			if (distance < minDistance){
