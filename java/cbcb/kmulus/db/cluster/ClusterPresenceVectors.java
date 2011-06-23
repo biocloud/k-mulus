@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
 public class ClusterPresenceVectors extends Configured implements Tool {
 	
 	private static final Logger LOG = Logger.getLogger(ClusterPresenceVectors.class);
-	private static final String USAGE = "ClusterPresenceVectors KMER_VECTOR_INPUT OUTPUT NUM_SEQUENCES NUM_CLUSTERS [NUM_TASKS]";
+	private static final String USAGE = "ClusterPresenceVectors KMER_VECTOR_INPUT OUTPUT NUM_SEQUENCES NUM_CLUSTERS [KMER_LENGTH] [NUM_TASKS] [DEBUG]";
 	
 	public static final String FINAL_DIR = "final";
 	
@@ -229,7 +229,7 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 	@Override
 	public int run(String[] args) throws Exception {
 
-		if (args.length < 4) {
+		if (args.length < 5) {
 			System.out.println(USAGE);
 			return CODE_ERROR;
 		}
@@ -239,7 +239,7 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		String outputPath = args[1];
 		String numSequences = args[2];
 		String numClusters = args[3];
-		
+
 		LOG.info("Tool name: ClusterPresenceVectors");
 		LOG.info(" - sequencePresenceVectors: " + sequenceInputPath);
 		LOG.info(" - outputDir: " + outputPath);
@@ -252,7 +252,7 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		Configuration conf = job.getConfiguration();
 		conf.setInt(ITERATION, runIter);
 		conf.set(INPUT_PATH, tempInput);
-		conf.setInt(KMER_LENGTH, 3);
+		conf.setInt(KMER_LENGTH, DEFAULT_KMER_LENGTH);
 		conf.setBoolean(DEBUG, true);
 
 		job.setOutputKeyClass(LongWritable.class);

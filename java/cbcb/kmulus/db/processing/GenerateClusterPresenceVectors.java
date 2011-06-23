@@ -186,6 +186,7 @@ public class GenerateClusterPresenceVectors extends Configured implements Tool {
 		int reduceTasks = MAX_REDUCES;
 		
 		/* Setup the key value pairs */
+
 		job.getConfiguration().setInt(KMER_LENGTH, 3);
 		
 		if (args.length > 2) {			

@@ -26,7 +26,7 @@ public class Blast extends Configured implements Tool {
 
 	private static final Logger LOG = Logger.getLogger(Blast.class);
 
-	private static final String USAGE = "Blast SEQUENCE_INPUT CLUSTER_INPUT OUTPUT NUM_CENTERS [NUM_TASKS]";
+	private static final String USAGE = "Blast SEQUENCE_INPUT CLUSTER_INPUT OUTPUT NUM_CENTERS PARTITION_URI [KMER LENGTH] [NUM_TASKS]";
 	
 	public static final String ALPHABET_SIZE = "ALPHABET_SIZE";
 	public static final String BLAST_DATABASES = "BLAST_DATABASES";
@@ -89,9 +89,9 @@ public class Blast extends Configured implements Tool {
 		
 		int mapTasks = MAX_MAPS;
 		int reduceTasks = MAX_REDUCES;
-
-		if(args.length > 5) {
-			int numTasks = Integer.parseInt(args[5]);
+		
+		if(args.length > 6) {
+			int numTasks = Integer.parseInt(args[6]);
 			mapTasks = numTasks;
 			reduceTasks = numTasks;	
 		}
@@ -100,7 +100,12 @@ public class Blast extends Configured implements Tool {
 		
 		job.getConfiguration().set(CLUSTER_DIR, clusterInputPath);
 		job.getConfiguration().setInt(NUM_CENTERS, numCenters);
+		job.getConfiguration().setInt(KMER_LENGTH, 3);
 		
+		if(args.length > 5){
+			job.getConfiguration().setInt(KMER_LENGTH, Integer.parseInt(args[5]));
+		}
+
 		// TODO(cmhill): Remove since, it's always using this symlink.
 		job.getConfiguration().set(BLAST_DATABASES, "blastdbs");
 		
