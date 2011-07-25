@@ -39,7 +39,7 @@ import cbcb.kmulus.util.PresenceVector;
 public class CountQueryMaps extends Configured implements Tool {
 
 	private static final Logger LOG = Logger.getLogger(CountQueryMaps.class);
-	private static final String USAGE = "Blast SEQUENCE_INPUT CLUSTER_INPUT OUTPUT [NUM_TASKS]";
+	private static final String USAGE = "Blast SEQUENCE_INPUT CLUSTER_INPUT OUTPUT KMER_LENGTH [NUM_TASKS]";
 	
 	protected static final String ALPHABET_SIZE = "ALPHABET_SIZE";
 	protected static final String BLAST_DATABASES = "BLAST_DATABASES";
@@ -65,7 +65,7 @@ public class CountQueryMaps extends Configured implements Tool {
 
 	public int run(String[] args) throws Exception {
 
-		if (args.length < 3) {
+		if (args.length < 4) {
 			System.out.println(USAGE);
 			return -1;
 		}
@@ -73,7 +73,8 @@ public class CountQueryMaps extends Configured implements Tool {
 		String sequenceInputPath = args[0];
 		String clusterInputPath = args[1];
 		String outputPath = args[2];
-
+		String kmerlength = args[3];
+		
 		LOG.info("Tool name: " + CountQueryMaps.class.getName());
 		LOG.info(" - sequenceInputDir: " + sequenceInputPath);
 		LOG.info(" - clusterInputDir: " + clusterInputPath);
@@ -81,6 +82,8 @@ public class CountQueryMaps extends Configured implements Tool {
 		
 		Job job = new Job(getConf(), CountQueryMaps.class.getName());
 		job.setJarByClass(CountQueryMaps.class);
+		
+		job.getConfiguration().setInt(KMER_LENGTH, Integer.parseInt(kmerlength));
 		
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(LongWritable.class);
@@ -98,8 +101,8 @@ public class CountQueryMaps extends Configured implements Tool {
 		int mapTasks = MAX_MAPS;
 		int reduceTasks = MAX_REDUCES;
 
-		if(args.length > 3) {
-			int numTasks = Integer.parseInt(args[3]);
+		if(args.length > 4) {
+			int numTasks = Integer.parseInt(args[4]);
 			mapTasks = numTasks;
 			reduceTasks = numTasks;	
 		}

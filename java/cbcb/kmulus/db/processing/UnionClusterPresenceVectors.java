@@ -1,20 +1,15 @@
 package cbcb.kmulus.db.processing;
 
 import java.io.IOException;
-import java.net.URI;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.Mapper.Context;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -60,7 +55,7 @@ public class UnionClusterPresenceVectors extends Configured implements Tool {
 		private int kmerLength;
 		
 		protected void setup(Context context) throws IOException, InterruptedException {
-			kmerLength = context.getConfiguration().getInt(GenerateClusterPresenceVectors.KMER_LENGTH, 3);
+			kmerLength = context.getConfiguration().getInt(KMER_LENGTH, 3);
 		}
 		
 		public void reduce(LongWritable key, Iterable<PresenceVector> values, Context context) 
@@ -89,19 +84,24 @@ public class UnionClusterPresenceVectors extends Configured implements Tool {
 
 	public int run(String[] args) throws Exception {
 
-		if (args.length < 2) {
+		if (args.length < 3) {
 			System.out.println(USAGE);
 			return -1;
 		}
 
 		String clusterInputPath = args[0];
 		String outputPath = args[1];
+		String kmerLen = args[2];
 
 		LOG.info("Tool name: UnionClusterPresenceVectors");
 		LOG.info(" - clusterInputDir: " + clusterInputPath);
 		LOG.info(" - outputDir: " + outputPath);
 		
+		
 		Job job = new Job(getConf(), "UnionClusterPresenceVectors");
+		
+		job.getConfiguration().setInt(KMER_LENGTH, Integer.parseInt(kmerLen));
+		
 		job.setJarByClass(UnionClusterPresenceVectors.class);
 		
 		job.setOutputKeyClass(LongWritable.class);

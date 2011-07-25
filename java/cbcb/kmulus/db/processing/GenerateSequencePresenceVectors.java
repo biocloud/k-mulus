@@ -15,7 +15,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.Reducer.Context;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -109,13 +108,14 @@ public class GenerateSequencePresenceVectors extends Configured implements Tool 
 	@Override
 	public int run(String[] args) throws Exception {
 
-		if (args.length < 2) {
+		if (args.length < 3) {
 			System.out.println(USAGE);
 			return -1;
 		}
 
 		String sequenceInputPath = args[0];
 		String outputPath = args[1];
+		String kmerLength = args[2];
 		
 		LOG.info("Tool name: GenerateSequencePresenceVectors");
 		LOG.info(" - sequenceInputDir: " + sequenceInputPath);
@@ -144,17 +144,14 @@ public class GenerateSequencePresenceVectors extends Configured implements Tool 
 		int reduceTasks = MAX_REDUCES;
 		
 		/* Setup the key value pairs */
-		job.getConfiguration().setInt(KMER_LENGTH, 3);
-		
-		if (args.length > 2) {			
-			job.getConfiguration().setInt(KMER_LENGTH, new Integer(args[2]));
-			
-			if (args.length > 3) {
-				int numTasks = Integer.parseInt(args[3]);
-				mapTasks = numTasks;
-				reduceTasks = numTasks;
-			}
+		job.getConfiguration().setInt(KMER_LENGTH, Integer.parseInt(kmerLength));
+				
+		if (args.length > 3) {
+			int numTasks = Integer.parseInt(args[3]);
+			mapTasks = numTasks;
+			reduceTasks = numTasks;
 		}
+	
 
 		job.setNumReduceTasks(reduceTasks);
 

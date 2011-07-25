@@ -23,12 +23,10 @@ public class KMeansReducer extends Reducer<LongWritable, PresenceVector, LongWri
 	private static final Logger LOG = Logger.getLogger(KMeansReducer.class);
 	
 	private int kmerLength;
-	private int numCenters;
 
 	protected void setup(Context context) throws IOException, InterruptedException {
 		Configuration conf = context.getConfiguration();
 		kmerLength = conf.getInt(ClusterPresenceVectors.KMER_LENGTH, 3);
-		numCenters = conf.getInt(ClusterPresenceVectors.NUM_CLUSTERS, 10);
 		debug = conf.getBoolean(ClusterPresenceVectors.DEBUG, false);
 	}
 		
@@ -43,7 +41,6 @@ public class KMeansReducer extends Reducer<LongWritable, PresenceVector, LongWri
 		Arrays.fill(distances, 0.0);
 		
 		int numOfSequences = 0;
-		PresenceVector pv = null;
 		
 		// Create the feature vector.
 		for (PresenceVector value : values) {

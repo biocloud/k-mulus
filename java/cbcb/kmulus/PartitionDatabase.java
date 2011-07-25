@@ -43,7 +43,7 @@ public class PartitionDatabase {
 	private static final String DEFAULT_KMER_LEN = "3";
 	
 	private static final String STEP_DELIM = ":";
-	private enum PipeStep {REPEAT_MASK, TRANSFORM_PV, CLUSTER, PREP, WRITE_PARTITIONS};
+	private enum PipeStep {REPEAT_MASK, TRANSFORM_PV, CLUSTER, PREP, WRITE_PARTITIONS, UNION_CENTERS};
 	private static final Map<Character, PipeStep> stepMap = ImmutableMap.<Character, PipeStep>builder()
 			.put('r', PipeStep.REPEAT_MASK)
 			.put('t', PipeStep.TRANSFORM_PV)
@@ -64,16 +64,16 @@ public class PartitionDatabase {
 		String finalOut = args[1];
 		String numSeq = args[2];
 		String numClusters = args[3];
-		String kmerLen = args.length > 4 ? args[4] : DEFAULT_KMER_LEN;
+		String kmerLen = args.length > 5 ? args[5] : DEFAULT_KMER_LEN;
 		PipeStep start = PipeStep.REPEAT_MASK;
 		PipeStep end = PipeStep.UNION_CENTERS;
 		
-		if (args.length > 5) {
-			if (!args[5].contains(STEP_DELIM)) {
+		if (args.length > 4) {
+			if (!args[4].contains(STEP_DELIM)) {
 				System.err.println(USAGE);
 				return;
 			}
-			String[] chunks = args[5].split(STEP_DELIM);
+			String[] chunks = args[4].split(STEP_DELIM);
 			String startStr = chunks[0];
 			if (startStr.length() > 0) {
 				start = stepMap.get(startStr.charAt(0));
@@ -111,7 +111,7 @@ public class PartitionDatabase {
 				Configuration conf = new Configuration();
 				FileSystem.get(conf).delete(new Path(tempOut), true);
 				FileSystem.get(conf).delete(new Path(finalOut), true);
-
+				conf.set("mapred.child.java.opts", "-Xmx1024m");
 				// TODO(calbach): Repeat masking.
 				if (end == PipeStep.REPEAT_MASK) {
 					break;
@@ -203,7 +203,7 @@ public class PartitionDatabase {
 			case UNION_CENTERS:
 				result = ToolRunner.run(
 						new UnionClusterPresenceVectors(),
-						new String[]{clusterOut, centersOut});
+						new String[]{clusterOut, centersOut, kmerLen});
 
 				if (result < 0) {
 					System.err.println(UnionClusterPresenceVectors.class.getName() + " failed.");

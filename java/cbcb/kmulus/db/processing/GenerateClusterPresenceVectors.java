@@ -2,7 +2,6 @@ package cbcb.kmulus.db.processing;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -41,14 +40,6 @@ public class GenerateClusterPresenceVectors extends Configured implements Tool {
 	 * (sequence id, sequence) for sequences.
 	 */
 	public static class Map extends Mapper<LongWritable, Text, LongWritable, Text> {
-
-		private int kmerLength;
-
-		@Override
-		protected void setup(Context context) {
-			Configuration conf = context.getConfiguration();
-			kmerLength = conf.getInt(GenerateClusterPresenceVectors.KMER_LENGTH, 3);
-		}
 
 		public void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
@@ -90,12 +81,11 @@ public class GenerateClusterPresenceVectors extends Configured implements Tool {
 	public static class Reduce extends Reducer<LongWritable, Text, 
 			LongWritable, PresenceVector> {
 
-		private static int KMER_LENGTH = 3;
+		private static int kmer_length;
 		
 		@Override
 		protected void setup(Context context) {
-			KMER_LENGTH = context.getConfiguration().getInt(
-					GenerateClusterPresenceVectors.KMER_LENGTH, 3);
+			kmer_length = context.getConfiguration().getInt(KMER_LENGTH, 3);
 		}
 		
 		public void reduce(LongWritable key, Iterable<Text> values, Context context)
@@ -132,10 +122,10 @@ public class GenerateClusterPresenceVectors extends Configured implements Tool {
 			String sequence = sequenceAndHeader.substring(sequenceAndHeader.indexOf(
 					GenerateClusterPresenceVectors.SEQUENCE_SEPARATOR) + 1);
 			
-			PresenceVector pv = new PresenceVector(KMER_LENGTH);
+			PresenceVector pv = new PresenceVector(kmer_length);
 			
-			for (int i = 0; i <= sequence.length() - KMER_LENGTH; i++) {
-				int hash = Biology.getAAKmerHash(sequence.substring(i, i + KMER_LENGTH));
+			for (int i = 0; i <= sequence.length() - kmer_length; i++) {
+				int hash = Biology.getAAKmerHash(sequence.substring(i, i + kmer_length));
 				if (hash >= 0) {
 					pv.setKmer(hash);
 				}
@@ -148,7 +138,7 @@ public class GenerateClusterPresenceVectors extends Configured implements Tool {
 	@Override
 	public int run(String[] args) throws Exception {
 
-		if (args.length < 3) {
+		if (args.length < 4) {
 			System.out.println(USAGE);
 			return -1;
 		}
@@ -156,6 +146,7 @@ public class GenerateClusterPresenceVectors extends Configured implements Tool {
 		String clusterDirPath = args[0];
 		String sequenceInputPath = args[1];
 		String outputPath = args[2];
+		String kmerlength = args[3];
 		
 		LOG.info("Tool name: GenerateClusterPresenceVectors");
 		LOG.info(" - clusterDirectory: " + clusterDirPath);
@@ -187,17 +178,14 @@ public class GenerateClusterPresenceVectors extends Configured implements Tool {
 		
 		/* Setup the key value pairs */
 
-		job.getConfiguration().setInt(KMER_LENGTH, 3);
-		
-		if (args.length > 2) {			
-			job.getConfiguration().setInt(KMER_LENGTH, new Integer(args[2]));
-			
-			if (args.length > 3) {
-				int numTasks = Integer.parseInt(args[3]);
-				mapTasks = numTasks;
-				reduceTasks = numTasks;
-			}
+		job.getConfiguration().setInt(KMER_LENGTH, Integer.parseInt(kmerlength));
+				
+		if (args.length > 4) {
+			int numTasks = Integer.parseInt(args[4]);
+			mapTasks = numTasks;
+			reduceTasks = numTasks;
 		}
+	
 
 		job.setNumReduceTasks(reduceTasks);
 

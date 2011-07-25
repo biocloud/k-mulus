@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.TreeSet;
 
-import cbcb.kmulus.util.Biology;
 import cbcb.kmulus.util.PresenceVector;
 
 import org.apache.hadoop.conf.Configuration;
@@ -17,10 +16,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.mapred.lib.IdentityReducer;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Mapper.Context;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -82,9 +79,7 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		
 		private boolean debug = false;
 		
-		private int kmerLength;
 		private int numCenters;
-		private int alphabetSize;
 		
 		private PresenceVector[] centers;
 		
@@ -99,7 +94,6 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 			
 			int iteration = new Integer(context.getConfiguration().getInt(ITERATION, -1));
 			
-			kmerLength = context.getConfiguration().getInt(KMER_LENGTH, 3);
 			numCenters = context.getConfiguration().getInt(NUM_CLUSTERS, -1);
 			debug = context.getConfiguration().getBoolean(DEBUG, false);
 			
@@ -109,7 +103,7 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 			
 			String input = context.getConfiguration().get(INPUT_PATH);
 			LOG.info("Loading cluster centers from: " + input + "/output-" + iteration);
-			
+			LOG.info("numCenters: " + numCenters);
 			initializeCenters();
 			
 			Path centersPath = new Path(input + "/output-" + iteration);
@@ -131,7 +125,8 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 
 					centers[currCenter] = new PresenceVector(value);
 					++currCenter;
-					
+					if(currCenter % 100 == 0)
+						LOG.info("currCenter: " + currCenter);
 					key.set(0);
 				}
 				
@@ -239,6 +234,7 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		String outputPath = args[1];
 		String numSequences = args[2];
 		String numClusters = args[3];
+		String kmerLen = args[4];
 
 		LOG.info("Tool name: ClusterPresenceVectors");
 		LOG.info(" - sequencePresenceVectors: " + sequenceInputPath);
@@ -250,9 +246,10 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 		job.setJarByClass(ClusterPresenceVectors.class);
 		
 		Configuration conf = job.getConfiguration();
+		conf.set("mapred.child.java.opts", "-Xmx1024m");
 		conf.setInt(ITERATION, runIter);
 		conf.set(INPUT_PATH, tempInput);
-		conf.setInt(KMER_LENGTH, DEFAULT_KMER_LENGTH);
+		conf.setInt(KMER_LENGTH, Integer.parseInt(kmerLen));
 		conf.setBoolean(DEBUG, true);
 
 		job.setOutputKeyClass(LongWritable.class);
@@ -271,21 +268,17 @@ public class ClusterPresenceVectors extends Configured implements Tool {
 
 		int mapTasks = MAX_MAPS;
 		int reduceTasks = MAX_REDUCES;
-
-		if (args.length > 4) {
-			
-			conf.setInt(KMER_LENGTH, Integer.parseInt(args[4]));
-			
-			if (args.length > 5) {
-				int numTasks = Integer.parseInt(args[5]);
-				mapTasks = numTasks;
-				reduceTasks = numTasks;
 				
-				if (args.length > 6) {
-					conf.setBoolean(DEBUG, true);
-				}
+		if (args.length > 5) {
+			int numTasks = Integer.parseInt(args[5]);
+			mapTasks = numTasks;
+			reduceTasks = numTasks;
+				
+			if (args.length > 6) {
+				conf.setBoolean(DEBUG, true);
 			}
 		}
+
 		
 		int maxSequenceNumber = Integer.parseInt(numSequences);
 		int clusters = Integer.parseInt(numClusters);

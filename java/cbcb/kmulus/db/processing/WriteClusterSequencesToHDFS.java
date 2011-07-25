@@ -14,7 +14,6 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.Mapper.Context;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -43,7 +42,6 @@ public class WriteClusterSequencesToHDFS extends Configured implements Tool {
 		private FileSystem hdfs;
 		private String baseOutputDir;
 		private boolean failedSetup = false;
-		private int numberOfClusters;
 
 
 		private int unique_id;
@@ -53,7 +51,6 @@ public class WriteClusterSequencesToHDFS extends Configured implements Tool {
 			Configuration conf = context.getConfiguration();
 			
 			baseOutputDir = conf.get(BASE_OUTPUT_DIR);
-			numberOfClusters = conf.getInt(NUM_CLUSTERS, 1);
 			
 			// TODO(cmhill): Better way to get a "unique" number for the reducer.
 			Random rand = new Random();
