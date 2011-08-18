@@ -14,6 +14,8 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
+import cbcb.kmulus.blast.Blast;
+
 /** 
  * This program determines how many clusters a specific query hits.
  * 
@@ -59,6 +61,10 @@ public class CountQueryMaps extends Configured implements Tool {
 		String outputPath = args[2];
 		String kmerlength = args[3];
 		String numCenters = args[4];
+		int minKmerMatch = 1;
+		if (args.length > 5) {
+			minKmerMatch = Integer.parseInt(args[5]);
+		}
 		
 		LOG.info("Tool name: " + CountQueryMaps.class.getName());
 		LOG.info(" - sequenceInputDir: " + sequenceInputPath);
@@ -66,15 +72,15 @@ public class CountQueryMaps extends Configured implements Tool {
 		LOG.info(" - outputDir: " + outputPath);
 		LOG.info(" - kmerlength: " + kmerlength);
 		LOG.info(" - numCenters: " + numCenters);
-
-
+		LOG.info(" - minKmerMatch: " + minKmerMatch);
 		
 		Job job = new Job(getConf(), CountQueryMaps.class.getName());
 		job.setJarByClass(CountQueryMaps.class);
 		
 		job.getConfiguration().setInt(KMER_LENGTH, Integer.parseInt(kmerlength));
 		job.getConfiguration().setInt(NUM_CENTERS, Integer.parseInt(numCenters));
-
+		job.getConfiguration().setInt(Blast.MIN_KMER_MATCH, minKmerMatch);
+		
 		job.getConfiguration().set("mapred.child.java.opts", "-Xmx1024m");
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(LongWritable.class);
@@ -92,8 +98,8 @@ public class CountQueryMaps extends Configured implements Tool {
 		int mapTasks = MAX_MAPS;
 		int reduceTasks = MAX_REDUCES;
 
-		if(args.length > 5) {
-			int numTasks = Integer.parseInt(args[5]);
+		if(args.length > 6) {
+			int numTasks = Integer.parseInt(args[6]);
 			mapTasks = numTasks;
 			reduceTasks = numTasks;	
 		}

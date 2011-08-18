@@ -1,7 +1,9 @@
 package cbcb.kmulus.blast;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
@@ -30,6 +32,9 @@ public class BlastMapper extends Mapper<LongWritable, Text, LongWritable, Text> 
 	private int alphabetSize;
 	private int kmerLength;
 	private int numCenters;
+	
+	// TODO(cmhill): Change to percentage since reads will be diff sizes.
+	private int minKmerMatch;
 	
 	/** The {@link PresenceVector} for each given cluster center. */
 	private PresenceVector[] clusterCenters;
@@ -99,6 +104,7 @@ public class BlastMapper extends Mapper<LongWritable, Text, LongWritable, Text> 
 		kmerLength = conf.getInt(Blast.KMER_LENGTH, 3);
 		alphabetSize = conf.getInt(Blast.ALPHABET_SIZE, Biology.AMINO_ACIDS.length);
 		numCenters = conf.getInt(Blast.NUM_CENTERS, -1);
+		minKmerMatch = conf.getInt(Blast.MIN_KMER_MATCH, 1);
 		
 		try {
 			loadClusters(conf);
@@ -128,6 +134,8 @@ public class BlastMapper extends Mapper<LongWritable, Text, LongWritable, Text> 
 			clusters.add(i);
 		}
 		
+		Map<Integer,Integer> kmerMatchCount = new HashMap<Integer, Integer>();
+		
 		for (int i = 0; i < sequence.length() - kmerLength; i++) {
 			
 			String kmer = sequence.substring(i, i + kmerLength);
@@ -135,20 +143,29 @@ public class BlastMapper extends Mapper<LongWritable, Text, LongWritable, Text> 
 			for (int kmerHash : kmerHashes) {
 
 				// Check which cluster centers overlap with this k-mer.
-				for (Integer j : clusters) {		
+				for (Integer j : clusters) {	
 					if (clusterCenters[j].containsKmer(kmerHash)) {
-						overlappingClusters.add(j);
+						if (kmerMatchCount.get(j) == null)
+							kmerMatchCount.put(j, 1);
+						else
+							kmerMatchCount.put(j, kmerMatchCount.get(j) + 1);
+						// overlappingClusters.add(j);
 					}
 				}
 				
 				// Remove all clusters we've already found overlaps for.
-				clusters.removeAll(overlappingClusters);
+				// clusters.removeAll(overlappingClusters);
 			}
 		}
 		
 		// Emit all overlapping clusters.
-		for (Integer clusterId : overlappingClusters) {
-			context.write(new LongWritable(clusterId), value);
+		for (Integer clusterId : kmerMatchCount.keySet()) {
+			if (kmerMatchCount.get(clusterId) >= minKmerMatch)
+				context.write(new LongWritable(clusterId), value);
 		}
+		
+		/* for (Integer clusterId : overlappingClusters) {
+			context.write(new LongWritable(clusterId), value);
+		} */
 	}
 }

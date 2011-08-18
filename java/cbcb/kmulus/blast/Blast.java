@@ -31,8 +31,9 @@ public class Blast extends Configured implements Tool {
 	public static final String ALPHABET_SIZE = "ALPHABET_SIZE";
 	public static final String BLAST_DATABASES = "BLAST_DATABASES";
 	public static final String CLUSTER_DIR = "CLUSTER_DIR";
-	public static final String NUM_CENTERS = "NUM_CENTERS";
 	public static final String KMER_LENGTH = "KMER_LENGTH";
+	public static final String MIN_KMER_MATCH = "MIN_KMER_MATCH";
+	public static final String NUM_CENTERS = "NUM_CENTERS";
 	
 	protected static final String HEADER_SEQUENCE_SEPARATOR = " ";
 	
@@ -89,9 +90,14 @@ public class Blast extends Configured implements Tool {
 		
 		int mapTasks = MAX_MAPS;
 		int reduceTasks = MAX_REDUCES;
+		int minKmerMatch = 1;
 		
 		if(args.length > 6) {
-			int numTasks = Integer.parseInt(args[6]);
+			minKmerMatch = Integer.parseInt(args[6]);
+		}
+		
+		if(args.length > 7) {
+			int numTasks = Integer.parseInt(args[7]);
 			mapTasks = numTasks;
 			reduceTasks = numTasks;	
 		}
@@ -101,6 +107,7 @@ public class Blast extends Configured implements Tool {
 		job.getConfiguration().set(CLUSTER_DIR, clusterInputPath);
 		job.getConfiguration().setInt(NUM_CENTERS, numCenters);
 		job.getConfiguration().setInt(KMER_LENGTH, 3);
+		job.getConfiguration().setInt(MIN_KMER_MATCH, minKmerMatch);
 		
 		if(args.length > 5){
 			job.getConfiguration().setInt(KMER_LENGTH, Integer.parseInt(args[5]));
