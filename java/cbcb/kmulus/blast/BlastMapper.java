@@ -149,12 +149,8 @@ public class BlastMapper extends Mapper<LongWritable, Text, LongWritable, Text> 
 							kmerMatchCount.put(j, 1);
 						else
 							kmerMatchCount.put(j, kmerMatchCount.get(j) + 1);
-						// overlappingClusters.add(j);
 					}
 				}
-				
-				// Remove all clusters we've already found overlaps for.
-				// clusters.removeAll(overlappingClusters);
 			}
 		}
 		
@@ -163,9 +159,5 @@ public class BlastMapper extends Mapper<LongWritable, Text, LongWritable, Text> 
 			if (kmerMatchCount.get(clusterId) >= minKmerMatch)
 				context.write(new LongWritable(clusterId), value);
 		}
-		
-		/* for (Integer clusterId : overlappingClusters) {
-			context.write(new LongWritable(clusterId), value);
-		} */
 	}
 }
